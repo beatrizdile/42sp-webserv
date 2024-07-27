@@ -9,83 +9,45 @@
 
 #define BUF_SIZE 500
 
-int main(int argc, char *argv[])
+int main()
 {
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    int sfd, s;
-    struct sockaddr_storage peer_addr;
-    socklen_t peer_addr_len;
-    ssize_t nread;
-    char buf[BUF_SIZE];
+    int socket_fd;
+    char *buf = (char *)malloc(BUF_SIZE);
+    struct sockaddr_in server_addr;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s port\n", argv[0]);
-        exit(EXIT_FAILURE);
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(8080);
+
+    if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+        perror("bind");
+        exit(1);
+    };
+    if (listen(socket_fd, 5) == -1) {
+        perror("listen");
+        exit(1);
     }
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-    hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
-    hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
-    hints.ai_protocol = 0;          /* Any protocol */
-    hints.ai_canonname = NULL;
-    hints.ai_addr = NULL;
-    hints.ai_next = NULL;
+    while (true)
+    {
+        int client_fd;
+        if ((client_fd = accept(socket_fd, NULL, NULL)) < 0)
+        {
+            perror("accept");
+            exit(1);
+        }
+        int bytes_read = recv(client_fd, buf, BUF_SIZE, 0);
+        buf[bytes_read] = '\0'; 
+        printf("%s\n", buf);
+        send(client_fd, "HTTP/1.1 200 OK\n", 16, 0);
+        send(client_fd, "Content-length: 46\n", 19, 0);
+        send(client_fd, "Content-Type: text/html\n\n", 25, 0);
+        send(client_fd, "<html><body><H1>Hello world</H1></body></html>", 46, 0);
 
-    s = getaddrinfo(NULL, argv[1], &hints, &result);
-    if (s != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        exit(EXIT_FAILURE);
+        close(client_fd);
     }
 
-    /* getaddrinfo() returns a list of address structures.
-        Try each address until we successfully bind(2).
-        If socket(2) (or bind(2)) fails, we (close the socket
-        and) try the next address. */
-
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sfd = socket(rp->ai_family, rp->ai_socktype,
-                rp->ai_protocol);
-        if (sfd == -1)
-            continue;
-
-        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
-            break;                  /* Success */
-
-        close(sfd);
-    }
-
-    if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Could not bind\n");
-        exit(EXIT_FAILURE);
-    }
-
-    freeaddrinfo(result);           /* No longer needed */
-
-    /* Read datagrams and echo them back to sender */
-
-    for (;;) {
-        peer_addr_len = sizeof(struct sockaddr_storage);
-        nread = recvfrom(sfd, buf, BUF_SIZE, 0,
-                (struct sockaddr *) &peer_addr, &peer_addr_len);
-        if (nread == -1)
-            continue;               /* Ignore failed request */
-
-        char host[NI_MAXHOST], service[NI_MAXSERV];
-
-        s = getnameinfo((struct sockaddr *) &peer_addr,
-                        peer_addr_len, host, NI_MAXHOST,
-                        service, NI_MAXSERV, NI_NUMERICSERV);
-        if (s == 0)
-            printf("Received %zd bytes from %s:%s\n",
-                    nread, host, service);
-        else
-            fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-
-        if (sendto(sfd, buf, nread, 0,
-                    (struct sockaddr *) &peer_addr,
-                    peer_addr_len) != nread)
-            fprintf(stderr, "Error sending response\n");
-    }
+    free(buf);
 }
