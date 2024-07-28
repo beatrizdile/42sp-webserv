@@ -12,7 +12,10 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <vector>
 
-#define BUF_SIZE 1024
+#include "Logger.hpp"
+
+#define BUFFER_SIZE 1024
 #define MAX_CLIENTS 100
 #define PORT 8081

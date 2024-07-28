@@ -19,7 +19,7 @@ NOVISU 	= 0 # 1 = no progress bar usefull when tty is not available
 FILE_EXTENSION	= .cpp
 SRCS_PATH		= ./src
 INCLUDE_PATH	= ./include
-SRCS			=
+SRCS			= Logger.cpp
 MAIN			= webserv.cpp
 
 ################################################################################
