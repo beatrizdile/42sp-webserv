@@ -1,6 +1,16 @@
 #include "webserv.h"
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+        exit(1);
+    }
+
+    Config config = Config();
+    if (!config.load(argv[1])) {
+        exit(1);
+    }
+
     Logger logger("Webserv");
 
     logger.info() << "Starting server" << std::endl;

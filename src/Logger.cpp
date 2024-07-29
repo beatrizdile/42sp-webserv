@@ -70,7 +70,7 @@ void Logger::perror(const std::string& message) {
     std::cerr << COLOR_ERROR << "[" << getCurrentTime() << "][" << tag << "][ERROR] " << COLOR_RESET << message << ": " << err << std::endl;
 }
 
-std::map<std::string, LogLevel> createLogLevelMap() {
+static std::map<std::string, LogLevel> createLogLevelMap() {
     std::map<std::string, LogLevel> m;
     m.insert(std::make_pair("DEBUG", DEBUG));
     m.insert(std::make_pair("INFO", INFO));

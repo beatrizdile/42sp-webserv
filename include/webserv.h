@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Logger.hpp"
+#include "Config.hpp"
 
 #define BUFFER_SIZE 1024
 #define MAX_CLIENTS 100
