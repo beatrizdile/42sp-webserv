@@ -7,9 +7,10 @@ int main(int argc, char **argv) {
     }
 
     Config config = Config();
-    if (!config.load(argv[1])) {
+    if (!config.loadConfig(argv[1])) {
         exit(1);
     }
+    config.printConfig();
 
     Logger logger("Webserv");
 

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <stdlib.h>
-
 #include <vector>
 
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
+#include "utils.h"
 
 class Config {
    public:
@@ -14,13 +13,12 @@ class Config {
     Config &operator=(const Config &other);
     ~Config();
 
-    bool load(std::string configFilePath);
+    bool loadConfig(std::string configFilePath);
+    void printConfig();
 
    private:
     Logger logger;
     std::vector<ServerConfig> servers;
 
-    bool getServers(const std::string &fileString);
-    void removeUnecessarySpaces(std::string &fileString);
-    bool verifySpaceBetweenBlocks(const std::string &fileString, size_t &start, size_t &end);
+    bool parseServers(const std::string &fileString);
 };
