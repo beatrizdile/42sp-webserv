@@ -14,13 +14,7 @@ void removeUnecessarySpaces(std::string &fileString) {
         fileString.replace(pos, 2, " ");
     }
 
-    if (fileString[0] == ' ') {
-        fileString.erase(0, 1);
-    }
-
-    if (fileString[fileString.size() - 1] == ' ') {
-        fileString.erase(fileString.size() - 1, 1);
-    }
+    trim(fileString);
 }
 
 bool verifySpaceBetweenBlocks(const std::string &fileString, size_t &start, size_t end) {
@@ -57,4 +51,19 @@ void split(const std::string &s, char delim, std::vector<std::string> &elems) {
     while (std::getline(ss, item, delim)) {
         elems.push_back(item);
     }
+}
+
+void trim(std::string &s) {
+    size_t start = 0;
+    size_t end = s.size();
+
+    while (start < s.size() && (s[start] == ' ' || s[start] == '\t')) {
+        ++start;
+    }
+
+    while (end > 0 && (s[end - 1] == ' ' || s[end - 1] == '\t')) {
+        --end;
+    }
+
+    s = s.substr(start, end - start);
 }

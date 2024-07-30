@@ -56,6 +56,12 @@ bool Config::parseServers(const std::string &fileString) {
             return (false);
         }
 
+        startBlock += 6;
+        if (!verifySpaceBetweenBlocks(fileString, startBlock, openBracePos)) {
+            logger.error() << "Invalid character between server block and brace '" << fileString[startBlock] << "' at position " << startBlock << std::endl;
+            return (false);
+        }
+
         size_t endBlock = 0;
         if (!verifyBracesBalance(fileString, openBracePos, endBlock)) {
             logger.error() << "Brackets are not balanced in config file" << std::endl;
@@ -63,7 +69,7 @@ bool Config::parseServers(const std::string &fileString) {
         }
 
         std::string serverString = fileString.substr(openBracePos + 1, endBlock - openBracePos - 2);
-        removeUnecessarySpaces(serverString);
+        trim(serverString);
         ServerConfig serverConfig;
         if (!serverConfig.parseServer(serverString)) {
             logger.error() << "Error parsing server block" << std::endl;
