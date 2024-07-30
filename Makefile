@@ -228,6 +228,6 @@ fclean:		header clean
 re:			fclean all
 
 val: clean all
-			@valgrind --track-origins=yes --leak-check=full -q ./$(NAME) ./query.txt
+			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/complete.conf
 
 .PHONY:		all clean fclean re header val

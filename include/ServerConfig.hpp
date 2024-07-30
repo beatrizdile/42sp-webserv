@@ -29,7 +29,10 @@ class ServerConfig {
     std::string name;
     std::string root;
     std::string index;
+    size_t clientBodySize;
+    std::vector<Method> methods;
     std::vector<LocationConfig> locations;
+    std::vector<std::pair<size_t, std::string> > errorPages;
 
     bool processLocations(std::string &fileString);
     bool parseAttribute(const std::vector<std::string> &elems);
@@ -38,4 +41,7 @@ class ServerConfig {
     bool processName(const std::vector<std::string> &elems);
     bool processRoot(const std::vector<std::string> &elems);
     bool processIndex(const std::vector<std::string> &elems);
+    bool processClientBodySize(const std::vector<std::string> &elems);
+    bool processMethod(const std::vector<std::string> &elems);
+    bool processErrorPage(const std::vector<std::string> &elems);
 };

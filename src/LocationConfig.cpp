@@ -1,6 +1,6 @@
 #include "LocationConfig.hpp"
 
-#include <stdlib.h>
+#include <algorithm>
 
 size_t LocationConfig::DEFAULT_CLIENT_BODY_SIZE = 1000000;
 std::string LocationConfig::INDEX_KEY = "index";
@@ -50,6 +50,14 @@ bool LocationConfig::parseLocationBlock(const std::string &locationBlockString, 
 
         startBlock++;
         lastEndBlock = startBlock;
+    }
+
+    if (methods.size() == 0) {
+        methods.push_back(GET);
+    }
+
+    if (index.empty()) {
+        index = "index.html";
     }
 
     return (true);
@@ -137,7 +145,12 @@ bool LocationConfig::processMethod(const std::vector<std::string> &elems) {
             return (false);
         }
 
-        methods.push_back(method);
+        if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
+            methods.push_back(method);
+        } else {
+            logger.error() << "Method already exists: " << elems[i] << std::endl;
+            return false;
+        }
     }
     return (true);
 }
@@ -160,20 +173,22 @@ bool LocationConfig::processErrorPage(const std::vector<std::string> &elems) {
 }
 
 void LocationConfig::printConfig() {
-    logger.info() << "Location config ------" << std::endl;
+    logger.info() << "Location config -----------------" << std::endl;
     logger.info() << "Path: " << path << std::endl;
     logger.info() << "Root: " << root << std::endl;
     logger.info() << "Index: " << index << std::endl;
     logger.info() << "Redirect: " << redirect << std::endl;
     logger.info() << "Client body size: " << clientBodySize << std::endl;
-    logger.info() << "Methods: ";
+
+    std::string methodsString;
     for (size_t i = 0; i < methods.size(); i++) {
-        logger.info() << getMethodString(methods[i]) << " ";
+        methodsString += getMethodString(methods[i]) + " ";
     }
-    logger.info() << std::endl;
-    logger.info() << "Error pages: ";
+    logger.info() << "Methods: " << methodsString << std::endl;
+
+    std::string errorPagesString;
     for (size_t i = 0; i < errorPages.size(); i++) {
-        logger.info() << errorPages[i].first << " -> " << errorPages[i].second << " ";
+        errorPagesString += errorPages[i].first + " " + errorPages[i].second + " ";
     }
-    logger.info() << std::endl;
+    logger.info() << "Error pages: " << errorPagesString << std::endl;
 }

@@ -7,7 +7,7 @@
 std::string ServerConfig::LISTEN_KEY = "listen";
 std::string ServerConfig::SERVER_NAME_KEY = "server_name";
 
-ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(""), name(""), root(""), index(""), locations(std::vector<LocationConfig>()) {}
+ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(""), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
 
 ServerConfig::ServerConfig(const ServerConfig& other) {
     *this = other;
@@ -91,6 +91,19 @@ bool ServerConfig::parseServer(const std::string& serverString) {
         lastEndBlock = startBlock;
     }
 
+    if (port == -1) {
+        logger.error() << "Port attribute is required" << std::endl;
+        return false;
+    }
+
+    if (methods.size() == 0) {
+        methods.push_back(GET);
+    }
+
+    if (index.empty()) {
+        index = "index.html";
+    }
+
     return (true);
 }
 bool ServerConfig::processListen(const std::vector<std::string>& elems) {
@@ -154,6 +167,64 @@ bool ServerConfig::processIndex(const std::vector<std::string>& elems) {
     return true;
 }
 
+bool ServerConfig::processClientBodySize(const std::vector<std::string>& elems) {
+    if (elems.size() != 2) {
+        logger.error() << "Client body size attribute must have a value" << std::endl;
+        return false;
+    }
+
+    char* end;
+    long bodySize = std::strtol(elems[1].c_str(), &end, 10);
+    if (*end != '\0' || bodySize < 0) {
+        logger.error() << "Client body size attribute must be a number in valid range" << std::endl;
+        return false;
+    }
+
+    clientBodySize = bodySize;
+    return true;
+}
+
+bool ServerConfig::processMethod(const std::vector<std::string>& elems) {
+    if (elems.size() < 2) {
+        logger.error() << "Method attribute must have a value" << std::endl;
+        return false;
+    }
+
+    for (size_t i = 1; i < elems.size(); i++) {
+        Method method = getMethod(elems[i]);
+        if (method == INVALID) {
+            logger.error() << "Invalid method: " << elems[i] << std::endl;
+            return false;
+        }
+
+        if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
+            methods.push_back(method);
+        } else {
+            logger.error() << "Method already exists: " << elems[i] << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ServerConfig::processErrorPage(const std::vector<std::string>& elems) {
+    if (elems.size() != 3) {
+        logger.error() << "Error page attribute must have a value" << std::endl;
+        return false;
+    }
+
+    char* end;
+    long code = std::strtol(elems[1].c_str(), &end, 10);
+    if (*end != '\0' || code < 100 || code > 599) {
+        logger.error() << "Error code must be a number in valid range" << std::endl;
+        return false;
+    }
+
+    errorPages.push_back(std::make_pair(code, elems[2]));
+    return true;
+}
+
 bool ServerConfig::parseAttribute(const std::vector<std::string>& elems) {
     if (elems.size() == 0) {
         return false;
@@ -167,6 +238,12 @@ bool ServerConfig::parseAttribute(const std::vector<std::string>& elems) {
         return processRoot(elems);
     } else if (elems[0] == LocationConfig::INDEX_KEY) {
         return processIndex(elems);
+    } else if (elems[0] == LocationConfig::CLIENT_BODY_SIZE_KEY) {
+        return processClientBodySize(elems);
+    } else if (elems[0] == LocationConfig::ALLOW_METHODS_KEY) {
+        return processMethod(elems);
+    } else if (elems[0] == LocationConfig::ERROR_PAGE_KEY) {
+        return processErrorPage(elems);
     } else {
         logger.error() << "Unknown attribute: " << elems[0] << std::endl;
         return false;
@@ -180,6 +257,19 @@ void ServerConfig::printConfig() {
     logger.info() << "Name: " << name << std::endl;
     logger.info() << "Root: " << root << std::endl;
     logger.info() << "Index: " << index << std::endl;
+    logger.info() << "Client body size: " << clientBodySize << std::endl;
+
+    std::string methodsString;
+    for (size_t i = 0; i < methods.size(); i++) {
+        methodsString += getMethodString(methods[i]) + " ";
+    }
+    logger.info() << "Methods: " << methodsString << std::endl;
+
+    std::string errorPagesString;
+    for (size_t i = 0; i < errorPages.size(); i++) {
+        errorPagesString += errorPages[i].first + " " + errorPages[i].second + " ";
+    }
+    logger.info() << "Error pages: " << errorPagesString << std::endl;
 
     for (size_t i = 0; i < locations.size(); i++) {
         locations[i].printConfig();

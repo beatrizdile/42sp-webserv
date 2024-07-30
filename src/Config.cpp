@@ -96,7 +96,7 @@ bool Config::parseServers(const std::string &fileString) {
 }
 
 void Config::printConfig() {
-    logger.info() << "Printing configuration -----------" << std::endl;
+    logger.info() << "Printing configuration ----------" << std::endl;
     for (size_t i = 0; i < servers.size(); ++i) {
         servers[i].printConfig();
     }
