@@ -139,9 +139,9 @@ bool LocationConfig::processMethod(const std::vector<std::string> &elems) {
     }
 
     for (size_t i = 1; i < elems.size(); i++) {
-        Method method = getMethod(elems[1]);
+        Method method = getMethod(elems[i]);
         if (method == INVALID) {
-            logger.error() << "Invalid method '" << elems[1] << "'" << std::endl;
+            logger.error() << "Invalid method '" << elems[i] << "'" << std::endl;
             return (false);
         }
 
@@ -188,7 +188,7 @@ void LocationConfig::printConfig() {
 
     std::string errorPagesString;
     for (size_t i = 0; i < errorPages.size(); i++) {
-        errorPagesString += errorPages[i].first + " " + errorPages[i].second + " ";
+        errorPagesString += std::to_string(errorPages[i].first) + " " + errorPages[i].second + " ";
     }
     logger.info() << "Error pages: " << errorPagesString << std::endl;
 }

@@ -2,7 +2,6 @@
 #                                     CONFIG                                   #
 ################################################################################
 
-
 NAME	= webserv
 CC 		= c++
 CFLAGS	= -Wall -Wextra -Werror -g3 -std=c++98
@@ -18,8 +17,8 @@ NOVISU 	= 0 # 1 = no progress bar usefull when tty is not available
 
 FILE_EXTENSION	= .cpp
 SRCS_PATH		= ./src
-INCLUDE_PATH	= ./include
-SRCS			= Config.cpp LocationConfig.cpp Logger.cpp ServerConfig.cpp utils.cpp Method.cpp
+INCLUDE_PATH	= ./include -I./include/model -I./include/parser
+SRCS			= parser/Config.cpp parser/LocationConfig.cpp Logger.cpp parser/ServerConfig.cpp utils.cpp model/Method.cpp
 MAIN			= webserv.cpp
 
 ################################################################################
