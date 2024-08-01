@@ -267,7 +267,7 @@ void ServerConfig::printConfig() {
 
     std::string errorPagesString;
     for (size_t i = 0; i < errorPages.size(); i++) {
-        errorPagesString += errorPages[i].first + " " + errorPages[i].second + " ";
+        errorPagesString += std::to_string(errorPages[i].first) + " " + errorPages[i].second + " ";
     }
     logger.info() << "Error pages: " << errorPagesString << std::endl;
 

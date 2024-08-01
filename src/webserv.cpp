@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     }
     config.printConfig();
 
+#ifndef __APPLE__
     Logger logger("Webserv");
 
     logger.info() << "Starting server" << std::endl;
@@ -107,4 +108,6 @@ int main(int argc, char **argv) {
 
     close(epoll_fd);
     close(socket_fd);
+#endif
 }
+
