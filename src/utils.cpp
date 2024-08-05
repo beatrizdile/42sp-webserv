@@ -5,7 +5,7 @@
 void removeUnecessarySpaces(std::string &fileString) {
     size_t pos = 0;
 
-    while ((pos = fileString.find("\t", pos)) != std::string::npos) {
+    while ((pos = fileString.find_first_of("\t\n\r\f\v", pos)) != std::string::npos) {
         fileString.replace(pos, 1, " ");
     }
 
@@ -66,4 +66,10 @@ void trim(std::string &s) {
     }
 
     s = s.substr(start, end - start);
+}
+
+std::string numberToString(long number) {
+    std::ostringstream oss;
+    oss << number;
+    return (oss.str());
 }

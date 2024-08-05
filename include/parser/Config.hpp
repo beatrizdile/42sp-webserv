@@ -2,23 +2,31 @@
 
 #include <vector>
 
+#include "AstNode.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
+#include "Token.hpp"
 #include "utils.h"
 
 class Config {
    public:
+    static std::string SERVER_KEY;
+
     Config();
     Config(const Config &other);
     Config &operator=(const Config &other);
     ~Config();
 
-    bool loadConfig(std::string configFilePath);
-    void printConfig();
+    void loadConfig(std::string configFilePath);
 
    private:
     Logger logger;
+    AstNode rootAstNode;
+    std::vector<Token> tokens;
     std::vector<ServerConfig> servers;
 
-    bool parseServers(const std::string &fileString);
+    void tokenize(const std::string &fileString);
+    void verifyBrackets();
+    void parseConfigToAst(AstNode *parentBlock);
+    void parseServers();
 };

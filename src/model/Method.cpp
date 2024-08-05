@@ -2,33 +2,33 @@
 
 Method getMethod(const std::string& method) {
     if (method == "HEAD") {
-        return HEAD;
+        return (HEAD);
     } else if (method == "GET") {
-        return GET;
+        return (GET);
     } else if (method == "POST") {
-        return POST;
+        return (POST);
     } else if (method == "DELETE") {
-        return DELETE;
+        return (DELETE);
     } else if (method == "OPTIONS") {
-        return OPTIONS;
+        return (OPTIONS);
     } else {
-        return INVALID;
+        return (INVALID);
     }
 }
 
 std::string getMethodString(Method method) {
     switch (method) {
         case HEAD:
-            return "HEAD";
+            return ("HEAD");
         case GET:
-            return "GET";
+            return ("GET");
         case POST:
-            return "POST";
+            return ("POST");
         case DELETE:
-            return "DELETE";
+            return ("DELETE");
         case OPTIONS:
-            return "OPTIONS";
+            return ("OPTIONS");
         default:
-            return "INVALID";
+            return ("INVALID");
     }
 }

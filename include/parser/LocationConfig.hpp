@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "AstNode.hpp"
 #include "Logger.hpp"
 #include "Method.hpp"
 #include "utils.h"
@@ -18,12 +19,11 @@ class LocationConfig {
     static std::string ERROR_PAGE_KEY;
 
     LocationConfig();
-    LocationConfig(const LocationConfig &other);
-    LocationConfig &operator=(const LocationConfig &other);
+    LocationConfig(const LocationConfig& other);
+    LocationConfig& operator=(const LocationConfig& other);
     ~LocationConfig();
 
-    bool parseLocationBlock(const std::string &locationBlockString, const std::string &locationPath);
-    void printConfig();
+    void parseLocation(const AstNode& node);
 
    private:
     Logger logger;
@@ -36,11 +36,10 @@ class LocationConfig {
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;
 
-    bool parseAttribute(const std::vector<std::string> &elems);
-    bool processRoot(const std::vector<std::string> &elems);
-    bool processIndex(const std::vector<std::string> &elems);
-    bool processRedirect(const std::vector<std::string> &elems);
-    bool processClientBodySize(const std::vector<std::string> &elems);
-    bool processMethod(const std::vector<std::string> &elems);
-    bool processErrorPage(const std::vector<std::string> &elems);
+    void parseRoot(const AstNode& node);
+    void parseIndex(const AstNode& node);
+    void parseRedirect(const AstNode& node);
+    void parseClientBodySize(const AstNode& node);
+    void parseMethod(const AstNode& node);
+    void parseErrorPage(const AstNode& node);
 };

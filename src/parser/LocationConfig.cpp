@@ -12,11 +12,11 @@ std::string LocationConfig::ERROR_PAGE_KEY = "error_page";
 
 LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(""), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
 
-LocationConfig::LocationConfig(const LocationConfig &other) {
+LocationConfig::LocationConfig(const LocationConfig& other) {
     *this = other;
 }
 
-LocationConfig &LocationConfig::operator=(const LocationConfig &other) {
+LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
     if (this != &other) {
         logger = other.logger;
         path = other.path;
@@ -32,163 +32,134 @@ LocationConfig &LocationConfig::operator=(const LocationConfig &other) {
 
 LocationConfig::~LocationConfig() {}
 
-bool LocationConfig::parseLocationBlock(const std::string &locationBlockString, const std::string &locationPath) {
-    path = locationPath;
-    size_t startBlock = 0;
-    size_t lastEndBlock = 0;
+void LocationConfig::parseLocation(const AstNode& node) {
+    if (node.getIsLeaf()) {
+        throw std::runtime_error("Location block is empty at line: " + numberToString(node.getKey().getLine()));
+    }
 
-    while ((startBlock = locationBlockString.find(";", startBlock)) != std::string::npos) {
-        std::string line = locationBlockString.substr(lastEndBlock, startBlock - lastEndBlock);
-        std::vector<std::string> elems;
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Location block has invalid values at line: " + numberToString(node.getKey().getLine()));
+    }
+    path = node.getValues().front().getValue();
 
-        trim(line);
-        split(line, ' ', elems);
+    std::vector<AstNode*> children = node.getChildren();
+    if (children.size() == 0) {
+        throw std::runtime_error("Location block is empty at line: " + numberToString(node.getKey().getLine()));
+    }
 
-        if (!parseAttribute(elems)) {
-            return (false);
+    for (size_t i = 0; i < children.size(); i++) {
+        std::string attribute = children[i]->getKey().getValue();
+
+        if (attribute == LocationConfig::ROOT_KEY) {
+            parseRoot(*children[i]);
+        } else if (attribute == LocationConfig::INDEX_KEY) {
+            parseIndex(*children[i]);
+        } else if (attribute == LocationConfig::CLIENT_BODY_SIZE_KEY) {
+            parseClientBodySize(*children[i]);
+        } else if (attribute == LocationConfig::ALLOW_METHODS_KEY) {
+            parseMethod(*children[i]);
+        } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
+            parseErrorPage(*children[i]);
+        } else {
+            throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
-
-        startBlock++;
-        lastEndBlock = startBlock;
     }
-
-    if (methods.size() == 0) {
-        methods.push_back(GET);
-    }
-
-    if (index.empty()) {
-        index = "index.html";
-    }
-
-    return (true);
 }
 
-bool LocationConfig::parseAttribute(const std::vector<std::string> &elems) {
-    if (elems.size() == 0) {
-        return (false);
+void LocationConfig::parseRoot(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Root attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    if (elems[0] == LocationConfig::ROOT_KEY) {
-        return (processRoot(elems));
-    } else if (elems[0] == LocationConfig::INDEX_KEY) {
-        return (processIndex(elems));
-    } else if (elems[0] == LocationConfig::REDIRECT_KEY) {
-        return (processRedirect(elems));
-    } else if (elems[0] == LocationConfig::CLIENT_BODY_SIZE_KEY) {
-        return (processClientBodySize(elems));
-    } else if (elems[0] == LocationConfig::ALLOW_METHODS_KEY) {
-        return (processMethod(elems));
-    } else if (elems[0] == LocationConfig::ERROR_PAGE_KEY) {
-        return (processErrorPage(elems));
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Root attribute expected one value at line: " + numberToString(node.getKey().getLine()));
     }
 
-    return (false);
+    root = node.getValues().front().getValue();
 }
 
-bool LocationConfig::processRoot(const std::vector<std::string> &elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Root attribute must have a value" << std::endl;
-        return (false);
+void LocationConfig::parseIndex(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Index attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    root = elems[1];
-    return (true);
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Index attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    index = node.getValues().front().getValue();
 }
 
-bool LocationConfig::processIndex(const std::vector<std::string> &elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Index attribute must have a value" << std::endl;
-        return (false);
+void LocationConfig::parseRedirect(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Redirect attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    index = elems[1];
-    return (true);
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Redirect attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    redirect = node.getValues().front().getValue();
 }
 
-bool LocationConfig::processRedirect(const std::vector<std::string> &elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Redirect attribute must have a value" << std::endl;
-        return (false);
+void LocationConfig::parseClientBodySize(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Client body size attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    redirect = elems[1];
-    return (true);
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Client body size attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::string value = node.getValues().front().getValue();
+    char* end;
+    long size = std::strtol(value.c_str(), &end, 10);
+    if (*end != '\0' || size < 0) {
+        throw std::runtime_error("Client body size attribute must be a number at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    clientBodySize = size;
 }
 
-bool LocationConfig::processClientBodySize(const std::vector<std::string> &elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Client body size attribute must have a value" << std::endl;
-        return (false);
+void LocationConfig::parseMethod(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Method attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    char *end;
-    long bodySize = std::strtol(elems[1].c_str(), &end, 10);
-    if (*end != '\0' || bodySize < 0) {
-        logger.error() << "Error code must be a number in valid range" << std::endl;
-        return (false);
-    }
-
-    clientBodySize = bodySize;
-    return (true);
-}
-
-bool LocationConfig::processMethod(const std::vector<std::string> &elems) {
-    if (elems.size() < 2) {
-        logger.error() << "Method attribute must have a value" << std::endl;
-        return (false);
+    std::vector<Token> elems = node.getValues();
+    if (elems.size() < 1) {
+        throw std::runtime_error("Method attribute must have at least one values at line: " + numberToString(node.getKey().getLine()));
     }
 
     for (size_t i = 1; i < elems.size(); i++) {
-        Method method = getMethod(elems[i]);
+        Method method = getMethod(elems[i].getValue());
         if (method == INVALID) {
-            logger.error() << "Invalid method '" << elems[i] << "'" << std::endl;
-            return (false);
+            throw std::runtime_error("Invalid method: '" + elems[i].getValue() + "' at line: " + numberToString(elems[i].getLine()));
         }
 
         if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
             methods.push_back(method);
         } else {
-            logger.error() << "Method already exists: " << elems[i] << std::endl;
-            return false;
+            throw std::runtime_error("Method '" + elems[i].getValue() + "' already exists at line: " + numberToString(elems[i].getLine()));
         }
     }
-    return (true);
 }
 
-bool LocationConfig::processErrorPage(const std::vector<std::string> &elems) {
-    if (elems.size() != 3) {
-        logger.error() << "Error page attribute must have a value" << std::endl;
-        return (false);
+void LocationConfig::parseErrorPage(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Error page attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    char *end;
-    long errorCode = std::strtol(elems[1].c_str(), &end, 10);
-    if (*end != '\0' || errorCode < 100 || errorCode > 599) {
-        logger.error() << "Error code must be a number in valid range" << std::endl;
-        return (false);
+    std::vector<Token> elems = node.getValues();
+    if (elems.size() != 2) {
+        throw std::runtime_error("Error page attribute must have two values at line: " + numberToString(node.getKey().getLine()));
     }
 
-    errorPages.push_back(std::make_pair(errorCode, elems[2]));
-    return (true);
-}
-
-void LocationConfig::printConfig() {
-    logger.info() << "Location config -----------------" << std::endl;
-    logger.info() << "Path: " << path << std::endl;
-    logger.info() << "Root: " << root << std::endl;
-    logger.info() << "Index: " << index << std::endl;
-    logger.info() << "Redirect: " << redirect << std::endl;
-    logger.info() << "Client body size: " << clientBodySize << std::endl;
-
-    std::string methodsString;
-    for (size_t i = 0; i < methods.size(); i++) {
-        methodsString += getMethodString(methods[i]) + " ";
+    char* end;
+    long code = std::strtol(elems[0].getValue().c_str(), &end, 10);
+    if (*end != '\0' || code < 100 || code > 599) {
+        throw std::runtime_error("Error page code must be a number in valid range at line: " + numberToString(elems[0].getLine()));
     }
-    logger.info() << "Methods: " << methodsString << std::endl;
 
-    std::string errorPagesString;
-    for (size_t i = 0; i < errorPages.size(); i++) {
-        errorPagesString += std::to_string(errorPages[i].first) + " " + errorPages[i].second + " ";
-    }
-    logger.info() << "Error pages: " << errorPagesString << std::endl;
+    errorPages.push_back(std::make_pair(code, elems[1].getValue()));
 }
