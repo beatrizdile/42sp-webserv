@@ -6,15 +6,16 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    Logger logger("Webserv");
     Config config = Config();
-    if (!config.loadConfig(argv[1])) {
+    try {
+        config.loadConfig(argv[1]);
+    } catch (std::exception &e) {
+        logger.error() << "Error: " << e.what() << std::endl;
         exit(1);
     }
-    config.printConfig();
 
 #ifndef __APPLE__
-    Logger logger("Webserv");
-
     logger.info() << "Starting server" << std::endl;
 
     int socket_fd = socket(AF_INET, SOCK_STREAM, 0);

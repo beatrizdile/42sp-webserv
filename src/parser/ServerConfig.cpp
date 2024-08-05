@@ -6,6 +6,7 @@
 
 std::string ServerConfig::LISTEN_KEY = "listen";
 std::string ServerConfig::SERVER_NAME_KEY = "server_name";
+std::string ServerConfig::LOCATION_KEY = "location";
 
 ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(""), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
 
@@ -21,257 +22,182 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
         root = other.root;
         index = other.index;
         locations = other.locations;
+        clientBodySize = other.clientBodySize;
+        methods = other.methods;
+        errorPages = other.errorPages;
     }
     return (*this);
 }
 
 ServerConfig::~ServerConfig() {}
 
-bool ServerConfig::processLocations(std::string& fileString) {
-    size_t locationBlock = 0;
-
-    while ((locationBlock = fileString.find("location", locationBlock)) != std::string::npos) {
-        size_t startBlock = fileString.find("{", locationBlock);
-        if (startBlock == std::string::npos) {
-            logger.error() << "Location block must start with '{'" << std::endl;
-            return false;
-        }
-
-        size_t locationPos = locationBlock + 8;
-        std::string locationString = fileString.substr(locationPos, startBlock - locationPos);
-        trim(locationString);
-        if (locationString.empty() || locationString.find(" ") != std::string::npos) {
-            logger.error() << "Location block must not contain spaces" << std::endl;
-            return false;
-        }
-
-        size_t endBlock = fileString.find("}", startBlock);
-        if (endBlock == std::string::npos) {
-            logger.error() << "Location block must end with '}'" << std::endl;
-            return false;
-        }
-
-        std::string locationBlockString = fileString.substr(startBlock + 1, endBlock - startBlock - 2);
-        fileString.erase(locationBlock, endBlock - locationBlock + 1);
-        trim(locationBlockString);
-
-        LocationConfig locationConfig;
-        if (!locationConfig.parseLocationBlock(locationBlockString, locationString)) {
-            return false;
-        }
-        locations.push_back(locationConfig);
-
-        locationBlock = 0;
+void ServerConfig::parseServer(const AstNode& node) {
+    if (node.getIsLeaf()) {
+        throw std::runtime_error("Server block is empty at line: " + numberToString(node.getKey().getLine()));
     }
 
-    return true;
+    if (node.getValues().size() != 0) {
+        throw std::runtime_error("Server block has invalid values at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::vector<AstNode*> children = node.getChildren();
+    if (children.size() == 0) {
+        throw std::runtime_error("Server block is empty at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    for (size_t i = 0; i < children.size(); i++) {
+        std::string attribute = children[i]->getKey().getValue();
+
+        if (attribute == ServerConfig::LISTEN_KEY) {
+            parseListen(*children[i]);
+        } else if (attribute == ServerConfig::SERVER_NAME_KEY) {
+            parseName(*children[i]);
+        } else if (attribute == ServerConfig::LOCATION_KEY) {
+            LocationConfig locationConfig;
+            locationConfig.parseLocation(*children[i]);
+            locations.push_back(locationConfig);
+        } else if (attribute == LocationConfig::ROOT_KEY) {
+            parseRoot(*children[i]);
+        } else if (attribute == LocationConfig::INDEX_KEY) {
+            parseIndex(*children[i]);
+        } else if (attribute == LocationConfig::CLIENT_BODY_SIZE_KEY) {
+            parseClientBodySize(*children[i]);
+        } else if (attribute == LocationConfig::ALLOW_METHODS_KEY) {
+            parseMethod(*children[i]);
+        } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
+            parseErrorPage(*children[i]);
+        } else {
+            throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
+        }
+    }
 }
 
-bool ServerConfig::parseServer(const std::string& serverString) {
-    size_t startBlock = 0;
-    size_t lastEndBlock = 0;
-    std::string server = serverString;
-
-    if (!processLocations(server)) {
-        return (false);
+void ServerConfig::parseListen(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Listen attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    while ((startBlock = server.find(";", startBlock)) != std::string::npos) {
-        std::string line = server.substr(lastEndBlock, startBlock - lastEndBlock);
-        std::vector<std::string> elems;
-
-        trim(line);
-        split(line, ' ', elems);
-
-        if (!parseAttribute(elems)) {
-            return (false);
-        }
-
-        startBlock++;
-        lastEndBlock = startBlock;
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Listen attribute expected one value at line: " + numberToString(node.getKey().getLine()));
     }
 
-    if (port == -1) {
-        logger.error() << "Port attribute is required" << std::endl;
-        return false;
-    }
-
-    if (methods.size() == 0) {
-        methods.push_back(GET);
-    }
-
-    if (index.empty()) {
-        index = "index.html";
-    }
-
-    return (true);
-}
-bool ServerConfig::processListen(const std::vector<std::string>& elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Port attribute must have a value" << std::endl;
-        return false;
-    }
-
-    std::vector<std::string> listens;
+    std::string value = node.getValues().front().getValue();
+    std::vector<std::string> parts;
     std::string portString;
-    split(elems[1], ':', listens);
-    if (listens.size() > 2) {
-        logger.error() << "Port attribute must be in the format 'host:port'" << std::endl;
-        return false;
-    } else if (listens.size() == 2) {
-        host = listens[0];
-        portString = listens[1];
+    split(value, ':', parts);
+
+    if (parts.size() > 2) {
+        throw std::runtime_error("Port attribute must be in the format '<host>:<port> or <port>' at line: " + numberToString(node.getKey().getLine()));
+    } else if (parts.size() == 2) {
+        host = parts[0];
+        portString = parts[1];
     } else {
-        portString = listens[0];
+        portString = parts[0];
     }
 
     char* end;
-    long value = std::strtol(portString.c_str(), &end, 10);
-
-    if (*end != '\0' || value < 0 || value > 65535) {
-        logger.error() << "Port attribute must be a number in valid range" << std::endl;
-        return false;
+    long portNumber = std::strtol(portString.c_str(), &end, 10);
+    if (*end != '\0' || portNumber < 0 || portNumber > 65535) {
+        throw std::runtime_error("Port attribute must be a number in valid range at line: " + numberToString(node.getKey().getLine()));
     }
 
-    port = value;
-    return true;
+    port = portNumber;
 }
 
-bool ServerConfig::processName(const std::vector<std::string>& elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Name attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseName(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Server name attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    name = elems[1];
-    return true;
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Server name attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    name = node.getValues().front().getValue();
 }
 
-bool ServerConfig::processRoot(const std::vector<std::string>& elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Root attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseRoot(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Root attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    root = elems[1];
-    return true;
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Root attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    root = node.getValues().front().getValue();
 }
 
-bool ServerConfig::processIndex(const std::vector<std::string>& elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Index attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseIndex(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Index attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    index = elems[1];
-    return true;
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Index attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    index = node.getValues().front().getValue();
 }
 
-bool ServerConfig::processClientBodySize(const std::vector<std::string>& elems) {
-    if (elems.size() != 2) {
-        logger.error() << "Client body size attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseClientBodySize(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Client body size attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Client body size attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::string value = node.getValues().front().getValue();
     char* end;
-    long bodySize = std::strtol(elems[1].c_str(), &end, 10);
-    if (*end != '\0' || bodySize < 0) {
-        logger.error() << "Client body size attribute must be a number in valid range" << std::endl;
-        return false;
+    long size = std::strtol(value.c_str(), &end, 10);
+    if (*end != '\0' || size < 0) {
+        throw std::runtime_error("Client body size attribute must be a number at line: " + numberToString(node.getKey().getLine()));
     }
 
-    clientBodySize = bodySize;
-    return true;
+    clientBodySize = size;
 }
 
-bool ServerConfig::processMethod(const std::vector<std::string>& elems) {
-    if (elems.size() < 2) {
-        logger.error() << "Method attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseMethod(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Method attribute can't have children at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::vector<Token> elems = node.getValues();
+    if (elems.size() < 1) {
+        throw std::runtime_error("Method attribute must have at least one values at line: " + numberToString(node.getKey().getLine()));
     }
 
     for (size_t i = 1; i < elems.size(); i++) {
-        Method method = getMethod(elems[i]);
+        Method method = getMethod(elems[i].getValue());
         if (method == INVALID) {
-            logger.error() << "Invalid method: " << elems[i] << std::endl;
-            return false;
+            throw std::runtime_error("Invalid method: '" + elems[i].getValue() + "' at line: " + numberToString(elems[i].getLine()));
         }
 
         if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
             methods.push_back(method);
         } else {
-            logger.error() << "Method already exists: " << elems[i] << std::endl;
-            return false;
+            throw std::runtime_error("Method '" + elems[i].getValue() + "' already exists at line: " + numberToString(elems[i].getLine()));
         }
     }
-
-    return true;
 }
 
-bool ServerConfig::processErrorPage(const std::vector<std::string>& elems) {
-    if (elems.size() != 3) {
-        logger.error() << "Error page attribute must have a value" << std::endl;
-        return false;
+void ServerConfig::parseErrorPage(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Error page attribute can't have children at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::vector<Token> elems = node.getValues();
+    if (elems.size() != 2) {
+        throw std::runtime_error("Error page attribute must have two values at line: " + numberToString(node.getKey().getLine()));
     }
 
     char* end;
-    long code = std::strtol(elems[1].c_str(), &end, 10);
+    long code = std::strtol(elems[0].getValue().c_str(), &end, 10);
     if (*end != '\0' || code < 100 || code > 599) {
-        logger.error() << "Error code must be a number in valid range" << std::endl;
-        return false;
+        throw std::runtime_error("Error page code must be a number in valid range at line: " + numberToString(elems[0].getLine()));
     }
 
-    errorPages.push_back(std::make_pair(code, elems[2]));
-    return true;
-}
-
-bool ServerConfig::parseAttribute(const std::vector<std::string>& elems) {
-    if (elems.size() == 0) {
-        return false;
-    }
-
-    if (elems[0] == ServerConfig::LISTEN_KEY) {
-        return processListen(elems);
-    } else if (elems[0] == ServerConfig::SERVER_NAME_KEY) {
-        return processName(elems);
-    } else if (elems[0] == LocationConfig::ROOT_KEY) {
-        return processRoot(elems);
-    } else if (elems[0] == LocationConfig::INDEX_KEY) {
-        return processIndex(elems);
-    } else if (elems[0] == LocationConfig::CLIENT_BODY_SIZE_KEY) {
-        return processClientBodySize(elems);
-    } else if (elems[0] == LocationConfig::ALLOW_METHODS_KEY) {
-        return processMethod(elems);
-    } else if (elems[0] == LocationConfig::ERROR_PAGE_KEY) {
-        return processErrorPage(elems);
-    } else {
-        logger.error() << "Unknown attribute: " << elems[0] << std::endl;
-        return false;
-    }
-}
-
-void ServerConfig::printConfig() {
-    logger.info() << "Server configuration ------------" << std::endl;
-    logger.info() << "Port: " << port << std::endl;
-    logger.info() << "Host: " << host << std::endl;
-    logger.info() << "Name: " << name << std::endl;
-    logger.info() << "Root: " << root << std::endl;
-    logger.info() << "Index: " << index << std::endl;
-    logger.info() << "Client body size: " << clientBodySize << std::endl;
-
-    std::string methodsString;
-    for (size_t i = 0; i < methods.size(); i++) {
-        methodsString += getMethodString(methods[i]) + " ";
-    }
-    logger.info() << "Methods: " << methodsString << std::endl;
-
-    std::string errorPagesString;
-    for (size_t i = 0; i < errorPages.size(); i++) {
-        errorPagesString += std::to_string(errorPages[i].first) + " " + errorPages[i].second + " ";
-    }
-    logger.info() << "Error pages: " << errorPagesString << std::endl;
-
-    for (size_t i = 0; i < locations.size(); i++) {
-        locations[i].printConfig();
-    }
+    errorPages.push_back(std::make_pair(code, elems[1].getValue()));
 }
