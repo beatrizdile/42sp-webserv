@@ -17,16 +17,19 @@ NOVISU 	= 0 # 1 = no progress bar usefull when tty is not available
 
 FILE_EXTENSION	= .cpp
 SRCS_PATH	= ./src
-INCLUDE_PATH	= ./include -I./include/model -I./include/parser
+INCLUDE_PATH	= ./include -I./include/model -I./include/parser -I./include/server -I./include/utils
 SRCS	= model/Method.cpp \
 				parser/AstNode.cpp \
 				parser/Config.cpp \
 				parser/LocationConfig.cpp \
 				parser/ServerConfig.cpp \
 				parser/Token.cpp \
-				Logger.cpp \
-				utils.cpp
-MAIN	= webserv.cpp
+				server/Location.cpp \
+				server/Server.cpp \
+				server/WebServer.cpp \
+				utils/Logger.cpp \
+				utils/utils.cpp
+MAIN	= main.cpp
 
 ################################################################################
 #                                  Makefile  objs                              #

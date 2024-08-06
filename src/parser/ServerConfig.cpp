@@ -8,7 +8,7 @@ std::string ServerConfig::LISTEN_KEY = "listen";
 std::string ServerConfig::SERVER_NAME_KEY = "server_name";
 std::string ServerConfig::LOCATION_KEY = "location";
 
-ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(""), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
+ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
 
 ServerConfig::ServerConfig(const ServerConfig& other) {
     *this = other;
@@ -16,6 +16,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
     if (this != &other) {
+        logger = other.logger;
         port = other.port;
         host = other.host;
         name = other.name;
@@ -89,7 +90,9 @@ void ServerConfig::parseListen(const AstNode& node) {
     if (parts.size() > 2) {
         throw std::runtime_error("Port attribute must be in the format '<host>:<port> or <port>' at line: " + numberToString(node.getKey().getLine()));
     } else if (parts.size() == 2) {
-        host = parts[0];
+        if (inet_pton(AF_INET, parts[0].c_str(), &host) != 1) {
+            throw std::runtime_error("Invalid host atribut '" + parts[0] + "' at line: " + numberToString(node.getKey().getLine()));
+        }
         portString = parts[1];
     } else {
         portString = parts[0];
@@ -200,4 +203,40 @@ void ServerConfig::parseErrorPage(const AstNode& node) {
     }
 
     errorPages.push_back(std::make_pair(code, elems[1].getValue()));
+}
+
+int ServerConfig::getPort() const {
+    return (port);
+}
+
+in_addr_t ServerConfig::getHost() const {
+    return (host);
+}
+
+std::string ServerConfig::getName() const {
+    return (name);
+}
+
+std::string ServerConfig::getRoot() const {
+    return (root);
+}
+
+std::string ServerConfig::getIndex() const {
+    return (index);
+}
+
+size_t ServerConfig::getClientBodySize() const {
+    return (clientBodySize);
+}
+
+std::vector<Method> ServerConfig::getMethods() const {
+    return (methods);
+}
+
+std::vector<LocationConfig> ServerConfig::getLocations() const {
+    return (locations);
+}
+
+std::vector<std::pair<size_t, std::string> > ServerConfig::getErrorPages() const {
+    return (errorPages);
 }

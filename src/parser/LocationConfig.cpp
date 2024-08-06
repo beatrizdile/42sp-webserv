@@ -163,3 +163,31 @@ void LocationConfig::parseErrorPage(const AstNode& node) {
 
     errorPages.push_back(std::make_pair(code, elems[1].getValue()));
 }
+
+std::string LocationConfig::getPath() const {
+    return (path);
+}
+
+std::string LocationConfig::getRoot() const {
+    return (root);
+}
+
+std::string LocationConfig::getIndex() const {
+    return (index);
+}
+
+std::string LocationConfig::getRedirect() const {
+    return (redirect);
+}
+
+size_t LocationConfig::getClientBodySize() const {
+    return (clientBodySize);
+}
+
+std::vector<Method> LocationConfig::getMethods() const {
+    return (methods);
+}
+
+std::vector<std::pair<size_t, std::string> > LocationConfig::getErrorPages() const {
+    return (errorPages);
+}

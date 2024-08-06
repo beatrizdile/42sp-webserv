@@ -1,13 +1,13 @@
 #pragma once
 
+#include <arpa/inet.h>
+
 #include <string>
 #include <vector>
 
-#include "LocationConfig.hpp"
 #include "AstNode.hpp"
+#include "LocationConfig.hpp"
 #include "Logger.hpp"
-
-typedef bool (*ProcessorFunc)(const std::vector<std::string> &);
 
 class ServerConfig {
    public:
@@ -16,17 +16,27 @@ class ServerConfig {
     static std::string LOCATION_KEY;
 
     ServerConfig();
-    ServerConfig(const ServerConfig &other);
-    ServerConfig &operator=(const ServerConfig &other);
+    ServerConfig(const ServerConfig& other);
+    ServerConfig& operator=(const ServerConfig& other);
     ~ServerConfig();
 
     void parseServer(const AstNode& node);
+
+    int getPort() const;
+    in_addr_t getHost() const;
+    std::string getName() const;
+    std::string getRoot() const;
+    std::string getIndex() const;
+    size_t getClientBodySize() const;
+    std::vector<Method> getMethods() const;
+    std::vector<LocationConfig> getLocations() const;
+    std::vector<std::pair<size_t, std::string> > getErrorPages() const;
 
    private:
     Logger logger;
 
     int port;
-    std::string host;
+    in_addr_t host;
     std::string name;
     std::string root;
     std::string index;

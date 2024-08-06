@@ -19,6 +19,8 @@ class Config {
 
     void loadConfig(std::string configFilePath);
 
+    std::vector<ServerConfig> getServers() const;
+
    private:
     Logger logger;
     AstNode rootAstNode;
