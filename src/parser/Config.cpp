@@ -141,3 +141,7 @@ void Config::parseServers() {
         }
     }
 }
+
+std::vector<ServerConfig> Config::getServers() const {
+    return (servers);
+}
