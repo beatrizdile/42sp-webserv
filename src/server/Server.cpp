@@ -19,8 +19,8 @@ Server::Server(const ServerConfig& serverConfig) {
     errorPages = serverConfig.getErrorPages();
 
     std::vector<LocationConfig> locationsConfig = serverConfig.getLocations();
-    for (size_t i = 0; i < locationsConfig.size(); i++) {
-        locations.push_back(Location(locationsConfig[i]));
+    for (std::vector<LocationConfig>::iterator it = locationsConfig.begin(); it != locationsConfig.end(); ++it) {
+        locations.push_back(Location(*it));
     }
 }
 
@@ -71,7 +71,19 @@ int Server::initServer() {
     return (socketFd);
 }
 
-int Server::finishServer() {
+int Server::finishServer() const {
     close(socketFd);
     return (socketFd);
+}
+
+int Server::getPort() const {
+    return (port);
+}
+
+in_addr_t Server::getHost() const {
+    return (host);
+}
+
+std::string Server::getName() const {
+    return (name);
 }

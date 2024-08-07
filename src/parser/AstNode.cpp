@@ -21,8 +21,8 @@ AstNode &AstNode::operator=(const AstNode &other) {
 }
 
 AstNode::~AstNode() {
-    for (size_t i = 0; i < children.size(); i++) {
-        delete children[i];
+    for (std::vector<AstNode *>::iterator it = children.begin(); it != children.end(); ++it) {
+        delete (*it);
     }
     children.clear();
 }

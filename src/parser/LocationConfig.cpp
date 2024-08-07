@@ -47,19 +47,19 @@ void LocationConfig::parseLocation(const AstNode& node) {
         throw std::runtime_error("Location block is empty at line: " + numberToString(node.getKey().getLine()));
     }
 
-    for (size_t i = 0; i < children.size(); i++) {
-        std::string attribute = children[i]->getKey().getValue();
+    for (std::vector<AstNode*>::iterator it = children.begin(); it != children.end(); ++it) {
+        std::string attribute = (*it)->getKey().getValue();
 
         if (attribute == LocationConfig::ROOT_KEY) {
-            parseRoot(*children[i]);
+            parseRoot(*(*it));
         } else if (attribute == LocationConfig::INDEX_KEY) {
-            parseIndex(*children[i]);
+            parseIndex(*(*it));
         } else if (attribute == LocationConfig::CLIENT_BODY_SIZE_KEY) {
-            parseClientBodySize(*children[i]);
+            parseClientBodySize(*(*it));
         } else if (attribute == LocationConfig::ALLOW_METHODS_KEY) {
-            parseMethod(*children[i]);
+            parseMethod(*(*it));
         } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
-            parseErrorPage(*children[i]);
+            parseErrorPage(*(*it));
         } else {
             throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
@@ -126,21 +126,21 @@ void LocationConfig::parseMethod(const AstNode& node) {
         throw std::runtime_error("Method attribute can't have children at line: " + numberToString(node.getKey().getLine()));
     }
 
-    std::vector<Token> elems = node.getValues();
-    if (elems.size() < 1) {
+    std::vector<Token> values = node.getValues();
+    if (values.size() < 1) {
         throw std::runtime_error("Method attribute must have at least one values at line: " + numberToString(node.getKey().getLine()));
     }
 
-    for (size_t i = 1; i < elems.size(); i++) {
-        Method method = getMethod(elems[i].getValue());
+    for (std::vector<Token>::iterator it = values.begin(); it != values.end(); ++it) {
+        Method method = getMethod((*it).getValue());
         if (method == INVALID) {
-            throw std::runtime_error("Invalid method: '" + elems[i].getValue() + "' at line: " + numberToString(elems[i].getLine()));
+            throw std::runtime_error("Invalid method: '" + (*it).getValue() + "' at line: " + numberToString((*it).getLine()));
         }
 
         if (std::find(methods.begin(), methods.end(), method) == methods.end()) {
             methods.push_back(method);
         } else {
-            throw std::runtime_error("Method '" + elems[i].getValue() + "' already exists at line: " + numberToString(elems[i].getLine()));
+            throw std::runtime_error("Method '" + (*it).getValue() + "' already exists at line: " + numberToString((*it).getLine()));
         }
     }
 }
