@@ -77,11 +77,11 @@ void Config::verifyBrackets() {
     std::string line;
     size_t lastOpen = 0;
 
-    for (size_t i = 0; i < tokens.size(); i++) {
-        if (tokens[i].getValue() == "{") {
-            if (brackets == 0) lastOpen = tokens[i].getLine();
+    for (std::vector<Token>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+        if ((*it).getValue() == "{") {
+            if (brackets == 0) lastOpen = (*it).getLine();
             ++brackets;
-        } else if (tokens[i].getValue() == "}") {
+        } else if ((*it).getValue() == "}") {
             --brackets;
         }
 
@@ -131,13 +131,13 @@ void Config::parseServers() {
         throw std::runtime_error("No server block found in config file");
     }
 
-    for (size_t i = 0; i < children.size(); i++) {
-        if (children[i]->getKey().getValue() == Config::SERVER_KEY) {
+    for (std::vector<AstNode *>::iterator it = children.begin(); it != children.end(); ++it) {
+        if ((*it)->getKey().getValue() == Config::SERVER_KEY) {
             ServerConfig serverConfig;
-            serverConfig.parseServer(*children[i]);
+            serverConfig.parseServer(*(*it));
             servers.push_back(serverConfig);
         } else {
-            throw std::runtime_error("Invalid block with name '" + children[i]->getKey().getValue() + "' in config file at line: " + numberToString(children[i]->getKey().getLine()));
+            throw std::runtime_error("Invalid block with name '" + (*it)->getKey().getValue() + "' in config file at line: " + numberToString(children[i]->getKey().getLine()));
         }
     }
 }

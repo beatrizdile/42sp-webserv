@@ -16,7 +16,11 @@ class Server {
     ~Server();
 
     int initServer();
-    int finishServer();
+    int finishServer() const;
+
+    int getPort() const;
+    in_addr_t getHost() const;
+    std::string getName() const;
 
    private:
     Logger logger;

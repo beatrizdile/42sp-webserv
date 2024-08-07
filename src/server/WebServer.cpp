@@ -10,8 +10,8 @@ WebServer::WebServer(const Config& config) {
     logger = Logger("SERVER_MANAGER");
 
     std::vector<ServerConfig> serversConfig = config.getServers();
-    for (size_t i = 0; i < serversConfig.size(); i++) {
-        servers.push_back(Server(serversConfig[i]));
+    for (std::vector<ServerConfig>::iterator it = serversConfig.begin(); it != serversConfig.end(); ++it) {
+        servers.push_back(Server(*it));
     }
 }
 
@@ -32,8 +32,8 @@ WebServer::~WebServer() {
 }
 
 void WebServer::setupServers() {
-    for (size_t i = 0; i < servers.size(); i++) {
-        int socketFd = servers[i].initServer();
+    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+        int socketFd = (*it).initServer();
         struct pollfd fd;
         fd.fd = socketFd;
         fd.events = POLLIN;
@@ -43,8 +43,8 @@ void WebServer::setupServers() {
 }
 
 void WebServer::finishServers() {
-    for (size_t i = 0; i < servers.size(); i++) {
-        int socketFd = servers[i].finishServer();
+    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+        int socketFd = (*it).finishServer();
 
         for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
             if (it->fd == socketFd) {
