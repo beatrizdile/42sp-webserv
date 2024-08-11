@@ -86,7 +86,7 @@ void Config::verifyBrackets() {
         }
 
         if (brackets < 0) {
-            throw std::runtime_error("Close bracket without open before at line: " + numberToString(tokens[i].getLine()));
+            throw std::runtime_error("Close bracket without open before at line: " + numberToString((*it).getLine()));
         }
     }
 
@@ -137,7 +137,7 @@ void Config::parseServers() {
             serverConfig.parseServer(*(*it));
             servers.push_back(serverConfig);
         } else {
-            throw std::runtime_error("Invalid block with name '" + (*it)->getKey().getValue() + "' in config file at line: " + numberToString(children[i]->getKey().getLine()));
+            throw std::runtime_error("Invalid block with name '" + (*it)->getKey().getValue() + "' in config file at line: " + numberToString((*it)->getKey().getLine()));
         }
     }
 }

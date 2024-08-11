@@ -236,7 +236,9 @@ fclean:		header clean
 
 re:			fclean all
 
-val: clean all
+val:
 			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/complete.conf
 
-.PHONY:		all clean fclean re header val
+reval: fclean all val
+
+.PHONY:		all clean fclean re header val reval

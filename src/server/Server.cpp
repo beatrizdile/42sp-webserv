@@ -1,14 +1,16 @@
 #include "Server.hpp"
 
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <cstring>
 
-Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
+Server::Server() : logger(Logger("SERVER")), socketFd(0), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
 
 Server::Server(const ServerConfig& serverConfig) {
     logger = Logger("SERVER");
+    socketFd = 0;
     port = serverConfig.getPort();
     host = serverConfig.getHost();
     name = serverConfig.getName();
@@ -31,6 +33,7 @@ Server::Server(const Server& other) {
 Server& Server::operator=(const Server& other) {
     if (this != &other) {
         logger = other.logger;
+        socketFd = other.socketFd;
         port = other.port;
         host = other.host;
         name = other.name;
@@ -49,11 +52,9 @@ Server::~Server() {}
 int Server::initServer() {
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
     int optval = 1;
-    if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+    if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval, sizeof(optval)) == -1) {
         close(socketFd);
-        std::string error_message = std::strerror(errno);
-        std::string full_message = "setsockopt: " + error_message;
-        throw std::runtime_error(full_message);
+        throw createError("setsockopt");
     }
 
     struct sockaddr_in server_addr;
@@ -63,17 +64,39 @@ int Server::initServer() {
     server_addr.sin_port = htons(port);
 
     if (bind(socketFd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-        std::string error_message = std::strerror(errno);
-        std::string full_message = "bind: " + error_message;
-        throw std::runtime_error(full_message);
+        throw createError("bind");
     };
+
+    if (listen(socketFd, MAX_CLIENTS) == -1) {
+        throw createError("listen");
+    }
 
     return (socketFd);
 }
 
 int Server::finishServer() const {
-    close(socketFd);
+    if (socketFd != 0)
+        close(socketFd);
     return (socketFd);
+}
+
+int Server::acceptConnection() {
+    struct sockaddr_in clientAddress;
+    socklen_t clientAddressLen = sizeof(clientAddress);
+    int clientFd = accept(socketFd, (struct sockaddr*)&clientAddress, &clientAddressLen);
+
+    int flags = fcntl(clientFd, F_GETFL, 0);
+    if (flags == -1) {
+        close(clientFd);
+        logger.perror("fcntl");
+        return (-1);
+    }
+    if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        close(clientFd);
+        logger.perror("fcntl");
+        return (-1);
+    }
+    return (clientFd);
 }
 
 int Server::getPort() const {
@@ -86,4 +109,8 @@ in_addr_t Server::getHost() const {
 
 std::string Server::getName() const {
     return (name);
+}
+
+int Server::getFd() const {
+    return (socketFd);
 }

@@ -9,6 +9,8 @@
 
 class Server {
    public:
+    static const size_t MAX_CLIENTS = 100;
+
     Server();
     Server(const ServerConfig &serverConfig);
     Server(const Server &other);
@@ -17,10 +19,12 @@ class Server {
 
     int initServer();
     int finishServer() const;
+    int acceptConnection();
 
     int getPort() const;
     in_addr_t getHost() const;
     std::string getName() const;
+    int getFd() const;
 
    private:
     Logger logger;

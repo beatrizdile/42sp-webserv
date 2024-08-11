@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
         config.loadConfig(argv[1]);
         WebServer webServer(config);
         webServer.setupServers();
+        webServer.runServers();
     } catch (std::exception &e) {
         logger.error() << "Error: " << e.what() << std::endl;
         return (1);
