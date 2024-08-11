@@ -72,19 +72,19 @@ void WebServer::runServers() {
     std::vector<int> fdsToAdd;
 
     while (true) {
-        int afected = 0;
-        int currentAfected = 0;
-        if ((afected = poll(fds.data(), fds.size(), -1)) < 0) {
+        int affected = 0;
+        int currentAffected = 0;
+        if ((affected = poll(fds.data(), fds.size(), -1)) < 0) {
             throw createError("poll");
         }
 
-        for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end() && currentAfected < afected; ++it) {
+        for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end() && currentAffected < affected; ++it) {
             if ((*it).revents & POLLIN) {
-                currentAfected++;
-                logger.info() << "New connection on fd " << (*it).fd << std::endl;
+                currentAffected++;
                 std::vector<Server>::iterator server = findServerFd((*it).fd);
 
                 if (server != servers.end()) {
+                    logger.info() << "New connection on fd " << (*it).fd << std::endl;
                     int clientFd = (*server).acceptConnection();
                     if (clientFd < 0) {
                         logger.perror("accept");
@@ -95,15 +95,15 @@ void WebServer::runServers() {
                     handleClient((*it).fd);
                 }
             } else if ((*it).revents & POLLERR) {
-                currentAfected++;
+                currentAffected++;
                 logger.error() << "Error on fd " << (*it).fd << std::endl;
                 fdsToRemove.push_back((*it).fd);
             } else if ((*it).revents & POLLRDHUP) {
-                currentAfected++;
+                currentAffected++;
                 logger.info() << "Client disconnected on fd " << (*it).fd << std::endl;
                 fdsToRemove.push_back((*it).fd);
             } else if ((*it).revents != 0) {
-                currentAfected++;
+                currentAffected++;
                 logger.info() << "Unknown event on fd " << (*it).fd << " events: " << (*it).revents << std::endl;
             }
         }

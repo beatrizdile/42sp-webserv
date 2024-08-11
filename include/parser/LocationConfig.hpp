@@ -40,6 +40,7 @@ class LocationConfig {
     std::string root;
     std::string index;
     std::string redirect;
+    // add autoindex
     size_t clientBodySize;
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;

@@ -71,6 +71,8 @@ int Server::initServer() {
         throw createError("listen");
     }
 
+    logger.info() << "Server " << name << " started on port " << port << std::endl;
+
     return (socketFd);
 }
 

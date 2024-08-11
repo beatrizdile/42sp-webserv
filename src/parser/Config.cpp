@@ -132,7 +132,7 @@ void Config::parseServers() {
     }
 
     for (std::vector<AstNode *>::iterator it = children.begin(); it != children.end(); ++it) {
-        if ((*it)->getKey().getValue() == Config::SERVER_KEY) {
+        if ((*it)->getKey().getValue() == Config::SERVER_KEY && !(*it)->getIsLeaf()) {
             ServerConfig serverConfig;
             serverConfig.parseServer(*(*it));
             servers.push_back(serverConfig);
