@@ -10,7 +10,7 @@
 
 class Config {
    public:
-    static std::string SERVER_KEY;
+    static const std::string SERVER_KEY;
 
     Config();
     Config(const Config &other);

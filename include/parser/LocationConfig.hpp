@@ -10,13 +10,14 @@
 
 class LocationConfig {
    public:
-    static size_t DEFAULT_CLIENT_BODY_SIZE;
-    static std::string INDEX_KEY;
-    static std::string ROOT_KEY;
-    static std::string REDIRECT_KEY;
-    static std::string CLIENT_BODY_SIZE_KEY;
-    static std::string ALLOW_METHODS_KEY;
-    static std::string ERROR_PAGE_KEY;
+    static const size_t DEFAULT_CLIENT_BODY_SIZE;
+    static const std::string INDEX_KEY;
+    static const std::string ROOT_KEY;
+    static const std::string REDIRECT_KEY;
+    static const std::string CLIENT_BODY_SIZE_KEY;
+    static const std::string ALLOW_METHODS_KEY;
+    static const std::string ERROR_PAGE_KEY;
+    static const std::string AUTOINDEX_KEY;
 
     LocationConfig();
     LocationConfig(const LocationConfig& other);
@@ -32,6 +33,7 @@ class LocationConfig {
     size_t getClientBodySize() const;
     std::vector<Method> getMethods() const;
     std::vector<std::pair<size_t, std::string> > getErrorPages() const;
+    bool getAutoindex() const;
 
    private:
     Logger logger;
@@ -40,10 +42,10 @@ class LocationConfig {
     std::string root;
     std::string index;
     std::string redirect;
-    // add autoindex
     size_t clientBodySize;
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;
+    bool autoindex;
 
     void parseRoot(const AstNode& node);
     void parseIndex(const AstNode& node);
@@ -51,4 +53,5 @@ class LocationConfig {
     void parseClientBodySize(const AstNode& node);
     void parseMethod(const AstNode& node);
     void parseErrorPage(const AstNode& node);
+    void parseAutoindex(const AstNode& node);
 };

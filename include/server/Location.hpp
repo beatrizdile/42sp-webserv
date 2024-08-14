@@ -24,4 +24,5 @@ class Location {
     size_t clientBodySize;
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;
+    bool autoindex;
 };

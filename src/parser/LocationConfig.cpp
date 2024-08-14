@@ -2,15 +2,16 @@
 
 #include <algorithm>
 
-size_t LocationConfig::DEFAULT_CLIENT_BODY_SIZE = 1000000;
-std::string LocationConfig::INDEX_KEY = "index";
-std::string LocationConfig::ROOT_KEY = "root";
-std::string LocationConfig::REDIRECT_KEY = "redirect";
-std::string LocationConfig::CLIENT_BODY_SIZE_KEY = "client_max_body_size";
-std::string LocationConfig::ALLOW_METHODS_KEY = "allow_methods";
-std::string LocationConfig::ERROR_PAGE_KEY = "error_page";
+const size_t LocationConfig::DEFAULT_CLIENT_BODY_SIZE = 1000000;
+const std::string LocationConfig::INDEX_KEY = "index";
+const std::string LocationConfig::ROOT_KEY = "root";
+const std::string LocationConfig::REDIRECT_KEY = "redirect";
+const std::string LocationConfig::CLIENT_BODY_SIZE_KEY = "client_max_body_size";
+const std::string LocationConfig::ALLOW_METHODS_KEY = "allow_methods";
+const std::string LocationConfig::ERROR_PAGE_KEY = "error_page";
+const std::string LocationConfig::AUTOINDEX_KEY = "autoindex";
 
-LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(""), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
+LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(""), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 LocationConfig::LocationConfig(const LocationConfig& other) {
     *this = other;
@@ -26,6 +27,7 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
         clientBodySize = other.clientBodySize;
         methods = other.methods;
         errorPages = other.errorPages;
+        autoindex = other.autoindex;
     }
     return (*this);
 }
@@ -60,6 +62,8 @@ void LocationConfig::parseLocation(const AstNode& node) {
             parseMethod(*(*it));
         } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
             parseErrorPage(*(*it));
+        } else if (attribute == LocationConfig::AUTOINDEX_KEY) {
+            parseAutoindex(*(*it));
         } else {
             throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
@@ -164,6 +168,25 @@ void LocationConfig::parseErrorPage(const AstNode& node) {
     errorPages.push_back(std::make_pair(code, elems[1].getValue()));
 }
 
+void LocationConfig::parseAutoindex(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Autoindex attribute can't have children at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Autoindex attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::string value = node.getValues().front().getValue();
+    if (value == "on") {
+        autoindex = true;
+    } else if (value == "off") {
+        autoindex = false;
+    } else {
+        throw std::runtime_error("Autoindex attribute must be 'on' or 'off' at line: " + numberToString(node.getKey().getLine()));
+    }
+}
+
 std::string LocationConfig::getPath() const {
     return (path);
 }
@@ -190,4 +213,8 @@ std::vector<Method> LocationConfig::getMethods() const {
 
 std::vector<std::pair<size_t, std::string> > LocationConfig::getErrorPages() const {
     return (errorPages);
+}
+
+bool LocationConfig::getAutoindex() const {
+    return (autoindex);
 }

@@ -5,9 +5,9 @@
 
 #include <algorithm>
 
-const int WebServer::MAX_EVENTS = 1000;
+const size_t WebServer::MAX_EVENTS = 1000;
 
-WebServer::WebServer() : logger(Logger("SERVER_MANAGER")), fds(std::vector<struct pollfd>()), servers(std::vector<Server>()) {
+WebServer::WebServer() : logger(Logger("SERVER_MANAGER")), fds(std::vector<struct pollfd>()), servers(std::vector<ServerManager>()) {
     fds.reserve(MAX_EVENTS);
 }
 
@@ -16,8 +16,25 @@ WebServer::WebServer(const Config& config) {
     logger = Logger("SERVER_MANAGER");
 
     std::vector<ServerConfig> serversConfig = config.getServers();
-    for (std::vector<ServerConfig>::iterator it = serversConfig.begin(); it != serversConfig.end(); ++it) {
-        servers.push_back(Server(*it));
+    verifyServers(serversConfig);
+
+    std::vector<ServerConfig> serversWithSameHostPort;
+    while (!serversConfig.empty()) {
+        serversWithSameHostPort.clear();
+        ServerConfig serverConfig = serversConfig.front();
+        serversWithSameHostPort.push_back(serverConfig);
+        serversConfig.erase(serversConfig.begin());
+
+        for (std::vector<ServerConfig>::iterator it = serversConfig.begin(); it != serversConfig.end();) {
+            if (serverConfig.getHost() == it->getHost() && serverConfig.getPort() == it->getPort()) {
+                serversWithSameHostPort.push_back(*it);
+                it = serversConfig.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        servers.push_back(ServerManager(serversWithSameHostPort));
     }
 }
 
@@ -40,9 +57,7 @@ WebServer::~WebServer() {
 }
 
 void WebServer::setupServers() {
-    verifyServers();
-
-    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+    for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
         int socketFd = (*it).initServer();
         struct pollfd fd;
         fd.fd = socketFd;
@@ -81,7 +96,7 @@ void WebServer::runServers() {
         for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end() && currentAffected < affected; ++it) {
             if ((*it).revents & POLLIN) {
                 currentAffected++;
-                std::vector<Server>::iterator server = findServerFd((*it).fd);
+                std::vector<ServerManager>::iterator server = findServerFd((*it).fd);
 
                 if (server != servers.end()) {
                     logger.info() << "New connection on fd " << (*it).fd << std::endl;
@@ -121,7 +136,7 @@ void WebServer::runServers() {
 }
 
 void WebServer::finishServers() {
-    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+    for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
         int socketFd = (*it).finishServer();
 
         for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
@@ -133,18 +148,23 @@ void WebServer::finishServers() {
     }
 }
 
-void WebServer::verifyServers() const {
-    for (std::vector<Server>::const_iterator it = servers.begin(); it != servers.end(); ++it) {
-        for (std::vector<Server>::const_iterator it2 = it + 1; it2 != servers.end(); ++it2) {
+void WebServer::verifyServers(std::vector<ServerConfig> serversConfig) {
+    for (std::vector<ServerConfig>::const_iterator it = serversConfig.begin(); it != serversConfig.end(); ++it) {
+        for (std::vector<ServerConfig>::const_iterator it2 = it + 1; it2 != serversConfig.end(); ++it2) {
             if ((*it).getPort() == (*it2).getPort() && (*it).getHost() == (*it2).getHost() && (*it).getName() == (*it2).getName()) {
-                throw std::runtime_error("Server with port " + numberToString((*it).getPort()) + " host " + numberToString((*it).getHost()) + " and name \"" + (*it).getName() + "\" already exists");
+                
+
+                char ipStr[INET_ADDRSTRLEN];
+                in_addr_t host = (*it).getHost();
+                inet_ntop(AF_INET, &host, ipStr, INET_ADDRSTRLEN);
+                throw std::runtime_error("Server with port " + numberToString((*it).getPort()) + " host " + ipStr + " and name \"" + (*it).getName() + "\" already exists");
             }
         }
     }
 }
 
-std::vector<Server>::iterator WebServer::findServerFd(int fd) {
-    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+std::vector<ServerManager>::iterator WebServer::findServerFd(int fd) {
+    for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
         if (it->getFd() == fd) {
             return (it);
         }

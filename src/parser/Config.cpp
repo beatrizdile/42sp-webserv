@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-std::string Config::SERVER_KEY = "server";
+const std::string Config::SERVER_KEY = "server";
 
 Config::Config() : logger(Logger("CONFIG")), rootAstNode(AstNode(Token("main", -1), false)), tokens(std::vector<Token>()), servers(std::vector<ServerConfig>()) {}
 

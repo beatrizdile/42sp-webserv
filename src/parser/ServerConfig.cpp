@@ -4,11 +4,11 @@
 
 #include "utils.h"
 
-std::string ServerConfig::LISTEN_KEY = "listen";
-std::string ServerConfig::SERVER_NAME_KEY = "server_name";
-std::string ServerConfig::LOCATION_KEY = "location";
+const std::string ServerConfig::LISTEN_KEY = "listen";
+const std::string ServerConfig::SERVER_NAME_KEY = "server_name";
+const std::string ServerConfig::LOCATION_KEY = "location";
 
-ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()) {}
+ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 ServerConfig::ServerConfig(const ServerConfig& other) {
     *this = other;
@@ -26,6 +26,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
         clientBodySize = other.clientBodySize;
         methods = other.methods;
         errorPages = other.errorPages;
+        autoindex = other.autoindex;
     }
     return (*this);
 }
@@ -67,6 +68,8 @@ void ServerConfig::parseServer(const AstNode& node) {
             parseMethod(*(*it));
         } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
             parseErrorPage(*(*it));
+        } else if (attribute == LocationConfig::AUTOINDEX_KEY) {
+            parseAutoindex(*(*it));
         } else {
             throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
@@ -205,6 +208,25 @@ void ServerConfig::parseErrorPage(const AstNode& node) {
     errorPages.push_back(std::make_pair(code, elems[1].getValue()));
 }
 
+void ServerConfig::parseAutoindex(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Autoindex attribute can't have children at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    if (node.getValues().size() != 1) {
+        throw std::runtime_error("Autoindex attribute expected one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::string value = node.getValues().front().getValue();
+    if (value == "on") {
+        autoindex = true;
+    } else if (value == "off") {
+        autoindex = false;
+    } else {
+        throw std::runtime_error("Autoindex attribute must be 'on' or 'off' at line: " + numberToString(node.getKey().getLine()));
+    }
+}
+
 int ServerConfig::getPort() const {
     return (port);
 }
@@ -239,4 +261,8 @@ std::vector<LocationConfig> ServerConfig::getLocations() const {
 
 std::vector<std::pair<size_t, std::string> > ServerConfig::getErrorPages() const {
     return (errorPages);
+}
+
+bool ServerConfig::getAutoindex() const {
+    return (autoindex);
 }

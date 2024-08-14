@@ -26,6 +26,7 @@ SRCS	= model/Method.cpp \
 				parser/Token.cpp \
 				server/Location.cpp \
 				server/Server.cpp \
+				server/ServerManager.cpp \
 				server/WebServer.cpp \
 				utils/Logger.cpp \
 				utils/utils.cpp

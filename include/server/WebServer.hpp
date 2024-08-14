@@ -4,11 +4,11 @@
 
 #include "Config.hpp"
 #include "Logger.hpp"
-#include "Server.hpp"
+#include "ServerManager.hpp"
 
 class WebServer {
    public:
-    const static int MAX_EVENTS;
+    static const size_t MAX_EVENTS;
 
     WebServer();
     WebServer(const Config &config);
@@ -24,11 +24,11 @@ class WebServer {
     Logger logger;
 
     std::vector<struct pollfd> fds;
-    std::vector<Server> servers;
+    std::vector<ServerManager> servers;
 
-    void verifyServers() const;
+    static void verifyServers(std::vector<ServerConfig> serversConfig);
     void handleClient(int clientFd);
-    std::vector<Server>::iterator findServerFd(int fd);
+    std::vector<ServerManager>::iterator findServerFd(int fd);
     void addNewClient(int serverFd);
     void removeClient(int clientfd);
 };

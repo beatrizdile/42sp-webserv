@@ -11,9 +11,9 @@
 
 class ServerConfig {
    public:
-    static std::string LISTEN_KEY;
-    static std::string SERVER_NAME_KEY;
-    static std::string LOCATION_KEY;
+    static const std::string LISTEN_KEY;
+    static const std::string SERVER_NAME_KEY;
+    static const std::string LOCATION_KEY;
 
     ServerConfig();
     ServerConfig(const ServerConfig& other);
@@ -31,6 +31,7 @@ class ServerConfig {
     std::vector<Method> getMethods() const;
     std::vector<LocationConfig> getLocations() const;
     std::vector<std::pair<size_t, std::string> > getErrorPages() const;
+    bool getAutoindex() const;
 
    private:
     Logger logger;
@@ -44,6 +45,7 @@ class ServerConfig {
     std::vector<Method> methods;
     std::vector<LocationConfig> locations;
     std::vector<std::pair<size_t, std::string> > errorPages;
+    bool autoindex;
 
     void parseListen(const AstNode& node);
     void parseName(const AstNode& node);
@@ -52,4 +54,5 @@ class ServerConfig {
     void parseClientBodySize(const AstNode& node);
     void parseMethod(const AstNode& node);
     void parseErrorPage(const AstNode& node);
+    void parseAutoindex(const AstNode& node);
 };
