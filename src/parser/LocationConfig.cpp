@@ -136,7 +136,7 @@ void LocationConfig::parseMethod(const AstNode& node) {
     }
 
     for (std::vector<Token>::iterator it = values.begin(); it != values.end(); ++it) {
-        Method method = getMethod((*it).getValue());
+        Method method = getMethodFromString((*it).getValue());
         if (method == INVALID) {
             throw std::runtime_error("Invalid method: '" + (*it).getValue() + "' at line: " + numberToString((*it).getLine()));
         }
@@ -187,19 +187,19 @@ void LocationConfig::parseAutoindex(const AstNode& node) {
     }
 }
 
-std::string LocationConfig::getPath() const {
+const std::string& LocationConfig::getPath() const {
     return (path);
 }
 
-std::string LocationConfig::getRoot() const {
+const std::string& LocationConfig::getRoot() const {
     return (root);
 }
 
-std::string LocationConfig::getIndex() const {
+const std::string& LocationConfig::getIndex() const {
     return (index);
 }
 
-std::string LocationConfig::getRedirect() const {
+const std::string& LocationConfig::getRedirect() const {
     return (redirect);
 }
 
@@ -207,11 +207,11 @@ size_t LocationConfig::getClientBodySize() const {
     return (clientBodySize);
 }
 
-std::vector<Method> LocationConfig::getMethods() const {
+const std::vector<Method>& LocationConfig::getMethods() const {
     return (methods);
 }
 
-std::vector<std::pair<size_t, std::string> > LocationConfig::getErrorPages() const {
+const std::vector<std::pair<size_t, std::string> >& LocationConfig::getErrorPages() const {
     return (errorPages);
 }
 

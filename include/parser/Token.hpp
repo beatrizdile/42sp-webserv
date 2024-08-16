@@ -10,10 +10,10 @@ class Token {
     Token &operator=(const Token &other);
     ~Token();
 
-    std::string getValue() const;
+    const std::string &getValue() const;
     size_t getLine() const;
-  
-  private:
+
+   private:
     std::string value;
     size_t line;
 };

@@ -15,14 +15,14 @@ class AstNode {
     void addChild(AstNode *child);
     void addValue(Token value);
 
-    Token getKey() const;
+    const Token &getKey() const;
     bool getIsLeaf() const;
-    std::vector<Token> getValues() const;
-    std::vector<AstNode *> getChildren() const;
+    const std::vector<Token> &getValues() const;
+    const std::vector<AstNode *> &getChildren() const;
 
    private:
     Token key;
     bool isLeaf;
     std::vector<Token> values;
-    std::vector<AstNode*> children;
+    std::vector<AstNode *> children;
 };

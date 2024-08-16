@@ -24,13 +24,13 @@ class ServerConfig {
 
     int getPort() const;
     in_addr_t getHost() const;
-    std::string getName() const;
-    std::string getRoot() const;
-    std::string getIndex() const;
+    const std::string& getName() const;
+    const std::string& getRoot() const;
+    const std::string& getIndex() const;
     size_t getClientBodySize() const;
-    std::vector<Method> getMethods() const;
-    std::vector<LocationConfig> getLocations() const;
-    std::vector<std::pair<size_t, std::string> > getErrorPages() const;
+    const std::vector<Method>& getMethods() const;
+    const std::vector<LocationConfig>& getLocations() const;
+    const std::vector<std::pair<size_t, std::string> >& getErrorPages() const;
     bool getAutoindex() const;
 
    private:

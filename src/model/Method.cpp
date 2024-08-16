@@ -1,6 +1,6 @@
 #include "Method.hpp"
 
-Method getMethod(const std::string& method) {
+Method getMethodFromString(const std::string& method) {
     if (method == "HEAD") {
         return (HEAD);
     } else if (method == "GET") {

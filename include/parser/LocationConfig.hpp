@@ -26,13 +26,13 @@ class LocationConfig {
 
     void parseLocation(const AstNode& node);
 
-    std::string getPath() const;
-    std::string getRoot() const;
-    std::string getIndex() const;
-    std::string getRedirect() const;
+    const std::string& getPath() const;
+    const std::string& getRoot() const;
+    const std::string& getIndex() const;
+    const std::string& getRedirect() const;
     size_t getClientBodySize() const;
-    std::vector<Method> getMethods() const;
-    std::vector<std::pair<size_t, std::string> > getErrorPages() const;
+    const std::vector<Method>& getMethods() const;
+    const std::vector<std::pair<size_t, std::string> >& getErrorPages() const;
     bool getAutoindex() const;
 
    private:

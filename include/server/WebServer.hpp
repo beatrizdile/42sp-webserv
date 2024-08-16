@@ -27,7 +27,6 @@ class WebServer {
     std::vector<ServerManager> servers;
 
     static void verifyServers(std::vector<ServerConfig> serversConfig);
-    void handleClient(int clientFd);
     std::vector<ServerManager>::iterator findServerFd(int fd);
     void addNewClient(int serverFd);
     void removeClient(int clientfd);

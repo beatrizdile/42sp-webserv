@@ -11,5 +11,5 @@ enum Method {
     INVALID,
 };
 
-Method getMethod(const std::string& method);
+Method getMethodFromString(const std::string& method);
 std::string getMethodString(Method method);

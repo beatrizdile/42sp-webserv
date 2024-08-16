@@ -35,7 +35,7 @@ void AstNode::addValue(Token value) {
     values.push_back(value);
 }
 
-Token AstNode::getKey() const {
+const Token &AstNode::getKey() const {
     return (key);
 }
 
@@ -43,10 +43,10 @@ bool AstNode::getIsLeaf() const {
     return (isLeaf);
 }
 
-std::vector<Token> AstNode::getValues() const {
+const std::vector<Token> &AstNode::getValues() const {
     return (values);
 }
 
-std::vector<AstNode *> AstNode::getChildren() const {
+const std::vector<AstNode *> &AstNode::getChildren() const {
     return (children);
 }

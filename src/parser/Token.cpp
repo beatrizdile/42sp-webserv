@@ -19,7 +19,7 @@ Token &Token::operator=(const Token &other) {
 
 Token::~Token() {}
 
-std::string Token::getValue() const {
+const std::string &Token::getValue() const {
     return (value);
 }
 

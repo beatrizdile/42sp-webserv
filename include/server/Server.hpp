@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "HttpRequest.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"

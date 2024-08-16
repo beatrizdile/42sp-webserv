@@ -67,21 +67,6 @@ void WebServer::setupServers() {
     }
 }
 
-void WebServer::handleClient(int clientFd) {
-    char buffer[1024];
-    int bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
-    if (bytesRead > 0) {
-        buffer[bytesRead] = '\0';
-        std::cout << "Received: " << buffer << std::endl;
-        send(clientFd, buffer, bytesRead, 0);
-    } else if (bytesRead == 0) {
-        logger.info() << "Client disconnected" << std::endl;
-        removeClient(clientFd);
-    } else {
-        logger.perror("recv");
-    }
-}
-
 void WebServer::runServers() {
     std::vector<int> fdsToRemove;
     std::vector<int> fdsToAdd;
@@ -93,13 +78,13 @@ void WebServer::runServers() {
             throw createError("poll");
         }
 
-        for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end() && currentAffected < affected; ++it) {
-            if ((*it).revents & POLLIN) {
+        for (std::vector<struct pollfd>::iterator fd = fds.begin(); fd != fds.end() && currentAffected < affected; ++fd) {
+            if ((*fd).revents & POLLIN) {
                 currentAffected++;
-                std::vector<ServerManager>::iterator server = findServerFd((*it).fd);
+                std::vector<ServerManager>::iterator server = findServerFd((*fd).fd);
 
                 if (server != servers.end()) {
-                    logger.info() << "New connection on fd " << (*it).fd << std::endl;
+                    logger.info() << "New connection on fd " << (*fd).fd << std::endl;
                     int clientFd = (*server).acceptConnection();
                     if (clientFd < 0) {
                         logger.perror("accept");
@@ -107,19 +92,26 @@ void WebServer::runServers() {
                     }
                     fdsToAdd.push_back(clientFd);
                 } else {
-                    handleClient((*it).fd);
+                    for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
+                        if ((*it).isClient((*fd).fd)) {
+                            if ((*it).readFromClient((*fd).fd) != 0) {
+                                fdsToRemove.push_back((*fd).fd);
+                            }
+                            break;
+                        }
+                    }
                 }
-            } else if ((*it).revents & POLLERR) {
+            } else if ((*fd).revents & POLLERR) {
                 currentAffected++;
-                logger.error() << "Error on fd " << (*it).fd << std::endl;
-                fdsToRemove.push_back((*it).fd);
-            } else if ((*it).revents & POLLRDHUP) {
+                logger.error() << "Error on fd " << (*fd).fd << std::endl;
+                fdsToRemove.push_back((*fd).fd);
+            } else if ((*fd).revents & POLLRDHUP) {
                 currentAffected++;
-                logger.info() << "Client disconnected on fd " << (*it).fd << std::endl;
-                fdsToRemove.push_back((*it).fd);
-            } else if ((*it).revents != 0) {
+                logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
+                fdsToRemove.push_back((*fd).fd);
+            } else if ((*fd).revents != 0) {
                 currentAffected++;
-                logger.info() << "Unknown event on fd " << (*it).fd << " events: " << (*it).revents << std::endl;
+                logger.info() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
             }
         }
 
@@ -137,12 +129,11 @@ void WebServer::runServers() {
 
 void WebServer::finishServers() {
     for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
-        int socketFd = (*it).finishServer();
+        std::vector<int> allSocketFd = (*it).finishServer();
 
         for (std::vector<struct pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
-            if (it->fd == socketFd) {
+            if (std::find(allSocketFd.begin(), allSocketFd.end(), (*it).fd) != allSocketFd.end()) {
                 fds.erase(it);
-                break;
             }
         }
     }
@@ -152,8 +143,6 @@ void WebServer::verifyServers(std::vector<ServerConfig> serversConfig) {
     for (std::vector<ServerConfig>::const_iterator it = serversConfig.begin(); it != serversConfig.end(); ++it) {
         for (std::vector<ServerConfig>::const_iterator it2 = it + 1; it2 != serversConfig.end(); ++it2) {
             if ((*it).getPort() == (*it2).getPort() && (*it).getHost() == (*it2).getHost() && (*it).getName() == (*it2).getName()) {
-                
-
                 char ipStr[INET_ADDRSTRLEN];
                 in_addr_t host = (*it).getHost();
                 inet_ntop(AF_INET, &host, ipStr, INET_ADDRSTRLEN);

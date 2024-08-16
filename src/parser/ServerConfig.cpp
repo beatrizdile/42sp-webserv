@@ -176,7 +176,7 @@ void ServerConfig::parseMethod(const AstNode& node) {
     }
 
     for (std::vector<Token>::iterator it = values.begin(); it != values.end(); ++it) {
-        Method method = getMethod((*it).getValue());
+        Method method = getMethodFromString((*it).getValue());
         if (method == INVALID) {
             throw std::runtime_error("Invalid method: '" + (*it).getValue() + "' at line: " + numberToString((*it).getLine()));
         }
@@ -235,15 +235,15 @@ in_addr_t ServerConfig::getHost() const {
     return (host);
 }
 
-std::string ServerConfig::getName() const {
+const std::string& ServerConfig::getName() const {
     return (name);
 }
 
-std::string ServerConfig::getRoot() const {
+const std::string& ServerConfig::getRoot() const {
     return (root);
 }
 
-std::string ServerConfig::getIndex() const {
+const std::string& ServerConfig::getIndex() const {
     return (index);
 }
 
@@ -251,15 +251,15 @@ size_t ServerConfig::getClientBodySize() const {
     return (clientBodySize);
 }
 
-std::vector<Method> ServerConfig::getMethods() const {
+const std::vector<Method>& ServerConfig::getMethods() const {
     return (methods);
 }
 
-std::vector<LocationConfig> ServerConfig::getLocations() const {
+const std::vector<LocationConfig>& ServerConfig::getLocations() const {
     return (locations);
 }
 
-std::vector<std::pair<size_t, std::string> > ServerConfig::getErrorPages() const {
+const std::vector<std::pair<size_t, std::string> >& ServerConfig::getErrorPages() const {
     return (errorPages);
 }
 
