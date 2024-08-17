@@ -56,3 +56,24 @@ int Server::getPort() const {
 in_addr_t Server::getHost() const {
     return (host);
 }
+
+std::vector<Location>::const_iterator Server::matchUri(std::string uri) const {
+    // Exact Match
+    for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); it++) {
+        if ((*it).getPath() == uri) {
+            return (it);
+        }
+    }
+
+    // Prefix Match
+    std::vector<Location>::const_iterator longest = locations.end();
+    for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); it++) {
+        if (uri.find((*it).getPath()) == 0) {
+            if (longest == locations.end() || (*it).getPath() > (*longest).getPath()) {
+                longest = it;
+            }
+        }
+    }
+
+    return (longest);
+}

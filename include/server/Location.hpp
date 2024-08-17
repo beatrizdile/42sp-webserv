@@ -14,6 +14,8 @@ class Location {
     Location &operator=(const Location &other);
     ~Location();
 
+    std::string getPath() const;
+
    private:
     Logger logger;
 

@@ -137,6 +137,11 @@ int ServerManager::readFromClient(int clientSocket) {
         if (!request.getBody().empty()) {
             logger.info() << "Body: " << request.getBody() << std::endl;
         }
+        // Find server that mach with "Host" header
+
+        // Find location in server that mach with URI
+
+        // Process request
         send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", 38, 0);
         request.clear();
     }

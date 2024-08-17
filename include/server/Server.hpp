@@ -32,4 +32,6 @@ class Server {
     std::vector<Location> locations;
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
+
+    std::vector<Location>::const_iterator matchUri(std::string uri) const;
 };
