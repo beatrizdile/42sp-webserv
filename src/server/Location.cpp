@@ -33,8 +33,8 @@ Location& Location::operator=(const Location& other) {
     return (*this);
 }
 
-std::string Location::getPath() const {
+Location::~Location() {}
+
+const std::string& Location::getPath() const {
     return (path);
 }
-
-Location::~Location() {}

@@ -18,6 +18,8 @@ class Server {
 
     int getPort() const;
     in_addr_t getHost() const;
+    const std::string &getName() const;
+    std::vector<Location>::const_iterator matchUri(std::string uri) const;
 
    private:
     Logger logger;
@@ -32,6 +34,4 @@ class Server {
     std::vector<Location> locations;
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
-
-    std::vector<Location>::const_iterator matchUri(std::string uri) const;
 };

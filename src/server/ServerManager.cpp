@@ -138,8 +138,10 @@ int ServerManager::readFromClient(int clientSocket) {
             logger.info() << "Body: " << request.getBody() << std::endl;
         }
         // Find server that mach with "Host" header
+        std::vector<Server>::const_iterator server = findServer(request.getHeaders().at("Host"));
 
         // Find location in server that mach with URI
+        std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
 
         // Process request
         send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", 38, 0);
@@ -169,4 +171,14 @@ in_addr_t ServerManager::getHost() const {
 
 int ServerManager::getFd() const {
     return (socketFd);
+}
+
+std::vector<Server>::const_iterator ServerManager::findServer(const std::string &host) const {
+    for (std::vector<Server>::const_iterator it = servers.begin(); it != servers.end(); ++it) {
+        if (it->getName() == host) {
+            return (it);
+        }
+    }
+
+    return (servers.begin());
 }

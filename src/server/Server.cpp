@@ -77,3 +77,7 @@ std::vector<Location>::const_iterator Server::matchUri(std::string uri) const {
 
     return (longest);
 }
+
+const std::string &Server::getName() const {
+    return (name);
+}

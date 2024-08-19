@@ -28,6 +28,7 @@ class ServerManager {
     int getFd() const;
     int readFromClient(int clientSocket);
     bool isClient(int clientSocket) const;
+    std::vector<Server>::const_iterator findServer(const std::string &host) const;
 
    private:
     Logger logger;
