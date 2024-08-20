@@ -47,6 +47,8 @@ class ServerConfig {
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
 
+    void verifyDuplicatedLocations() const;
+
     void parseListen(const AstNode& node);
     void parseName(const AstNode& node);
     void parseRoot(const AstNode& node);

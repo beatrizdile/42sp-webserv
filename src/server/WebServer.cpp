@@ -16,7 +16,7 @@ WebServer::WebServer(const Config& config) {
     logger = Logger("SERVER_MANAGER");
 
     std::vector<ServerConfig> serversConfig = config.getServers();
-    verifyServers(serversConfig);
+    verifyDuplicatedServers(serversConfig);
 
     std::vector<ServerConfig> serversWithSameHostPort;
     while (!serversConfig.empty()) {
@@ -105,7 +105,7 @@ void WebServer::runServers() {
                 currentAffected++;
                 logger.error() << "Error on fd " << (*fd).fd << std::endl;
                 fdsToRemove.push_back((*fd).fd);
-            } else if ((*fd).revents & POLLRDHUP) {
+            } else if ((*fd).revents & POLLHUP) {
                 currentAffected++;
                 logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
                 fdsToRemove.push_back((*fd).fd);
@@ -139,7 +139,7 @@ void WebServer::finishServers() {
     }
 }
 
-void WebServer::verifyServers(std::vector<ServerConfig> serversConfig) {
+void WebServer::verifyDuplicatedServers(std::vector<ServerConfig> serversConfig) {
     for (std::vector<ServerConfig>::const_iterator it = serversConfig.begin(); it != serversConfig.end(); ++it) {
         for (std::vector<ServerConfig>::const_iterator it2 = it + 1; it2 != serversConfig.end(); ++it2) {
             if ((*it).getPort() == (*it2).getPort() && (*it).getHost() == (*it2).getHost() && (*it).getName() == (*it2).getName()) {
@@ -174,7 +174,7 @@ void WebServer::removeClient(int clientfd) {
 void WebServer::addNewClient(int clientFd) {
     pollfd clientPollfd;
     clientPollfd.fd = clientFd;
-    clientPollfd.events = POLLIN | POLLRDHUP | POLLERR;
+    clientPollfd.events = POLLIN | POLLHUP | POLLERR;
     clientPollfd.revents = 0;
     fds.push_back(clientPollfd);
 }

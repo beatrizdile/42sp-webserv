@@ -8,6 +8,13 @@
 
 #include "utils.h"
 
+const std::string HttpRequest::HEADER_HOST_KEY = "host";
+const std::string HttpRequest::URI_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVXWYZabcdefghijklmnopqrstuvxwyz0123456789-_.~/?:@&=+$,#";
+const std::string HttpRequest::HEADER_VALUE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-!@#$%^&*()_+|~=`{}[];:'\",.<>/? \t\r\n";
+const std::string HttpRequest::HEADER_KEY_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
+const std::string HttpRequest::HTTP_VERSION = "HTTP/1.1";
+const std::string HttpRequest::CONTENT_LENTH_HEADER_KEY = "content-length";
+
 HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
 
 HttpRequest::HttpRequest(const HttpRequest &copy) {
@@ -32,7 +39,6 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &assign) {
 }
 
 void HttpRequest::clear() {
-    rawData.clear();
     method = INVALID;
     uri.clear();
     version.clear();
@@ -53,6 +59,11 @@ bool HttpRequest::digestRequest(const std::string &data) {
         size_t pos = rawData.find("\r\n\r\n");
         if (pos != std::string::npos) {
             parseHeaders(pos);
+
+            if (headers.find(HEADER_HOST_KEY) == headers.end()) {
+                throw std::runtime_error("Host header not found");
+            }
+
             if (contentLength == 0) {
                 complete = true;
             }
@@ -107,11 +118,11 @@ void HttpRequest::parseFristLine() {
         throw std::runtime_error("Invalid method found '" + stringMethod + "'");
     }
 
-    if (uri.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVXWYZabcdefghijklmnopqrstuvxwyz0123456789-_.~/?:@&=+$,#") != std::string::npos) {
+    if (uri.find_first_not_of(URI_CHARACTERS) != std::string::npos) {
         throw std::runtime_error("Invalid caracter in URI");
     }
 
-    if (version != "HTTP/1.1") {
+    if (version != HTTP_VERSION) {
         throw std::runtime_error("Invalid HTTP version '" + version + "'");
     }
 }
@@ -125,23 +136,31 @@ void HttpRequest::parseHeaders(size_t endPos) {
         std::string line = data.substr(0, pos);
         data = data.substr(pos + 2);
 
-        if ((pos = line.find(":")) == std::string::npos) {
+        if ((pos = line.find(':')) == std::string::npos) {
             throw std::runtime_error("Invalid header '" + line + "'");
         }
 
         std::string key = line.substr(0, pos);
-        trim(key);
+        if (key.find_first_not_of(HEADER_KEY_CHARACTERS) != std::string::npos) {
+            throw std::runtime_error("Invalid header key '" + key + "'");
+        }
+        lowercase(key);
+
         std::string value = line.substr(pos + 1);
         trim(value);
+        if (value.find_first_not_of(HEADER_VALUE_CHARACTERS) != std::string::npos) {
+            throw std::runtime_error("Invalid header value '" + value + "'");
+        }
 
         headers[key] = value;
     }
 
-    if (headers.find("Content-Length") != headers.end()) {
+    if (headers.find(CONTENT_LENTH_HEADER_KEY) != headers.end()) {
         char *end;
-        long size = std::strtol(headers["Content-Length"].c_str(), &end, 10);
+        long size = std::strtol(headers[CONTENT_LENTH_HEADER_KEY].c_str(), &end, 10);
+        // check se Content-Length é maior que body size because yeah
         if (*end != '\0' || size < 0) {
-            throw std::runtime_error("Invalid Content-Length '" + headers["Content-Length"] + "'");
+            throw std::runtime_error("Invalid Content-Length '" + headers[CONTENT_LENTH_HEADER_KEY] + "'");
         }
         contentLength = size;
     }

@@ -13,3 +13,4 @@ void split(const std::string &s, char delim, std::vector<std::string> &elems);
 void trim(std::string &s);
 std::string numberToString(long number);
 std::runtime_error createError(const std::string &error);
+void lowercase(std::string &str);

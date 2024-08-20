@@ -8,6 +8,8 @@
 
 class HttpRequest {
    public:
+    static const std::string HEADER_HOST_KEY;
+
     HttpRequest();
     HttpRequest(const HttpRequest &copy);
     ~HttpRequest();
@@ -34,6 +36,13 @@ class HttpRequest {
     std::string body;
     size_t contentLength;
     bool complete;
+
+    static const std::string URI_CHARACTERS;
+    static const std::string HEADER_VALUE_CHARACTERS;
+    static const std::string HEADER_KEY_CHARACTERS;
+    static const std::string CONTENT_LENTH;
+    static const std::string HTTP_VERSION;
+    static const std::string CONTENT_LENTH_HEADER_KEY;
 
     void parseFristLine();
     void parseHeaders(size_t endPos);

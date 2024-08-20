@@ -79,3 +79,9 @@ std::runtime_error createError(const std::string &error) {
     std::string full_message = error + ": " + error_message;
     return (std::runtime_error(full_message));
 }
+
+void lowercase(std::string &str) {
+    for (size_t i = 0; i < str.size(); ++i) {
+        str[i] = std::tolower(str[i]);
+    }
+}

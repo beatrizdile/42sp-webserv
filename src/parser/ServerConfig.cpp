@@ -74,6 +74,18 @@ void ServerConfig::parseServer(const AstNode& node) {
             throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
     }
+
+    verifyDuplicatedLocations();
+}
+
+void ServerConfig::verifyDuplicatedLocations() const {
+    for (std::vector<LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+        for (std::vector<LocationConfig>::const_iterator it2 = it + 1; it2 != locations.end(); ++it2) {
+            if ((*it).getPath() == (*it2).getPath()) {
+                throw std::runtime_error("Duplicated location name " + (*it).getPath());
+            }
+        }
+    }
 }
 
 void ServerConfig::parseListen(const AstNode& node) {
@@ -120,6 +132,7 @@ void ServerConfig::parseName(const AstNode& node) {
     }
 
     name = node.getValues().front().getValue();
+    lowercase(name);
 }
 
 void ServerConfig::parseRoot(const AstNode& node) {

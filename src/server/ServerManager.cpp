@@ -46,11 +46,14 @@ ServerManager::~ServerManager() {}
 
 int ServerManager::initServer() {
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
+
+    # ifndef __APPLE__
     int optval = 1;
     if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval, sizeof(optval)) == -1) {
         close(socketFd);
         throw createError("setsockopt");
     }
+    # endif
 
     struct sockaddr_in server_addr;
     std::memset((char*)&server_addr, 0, sizeof(server_addr));
@@ -137,11 +140,13 @@ int ServerManager::readFromClient(int clientSocket) {
         if (!request.getBody().empty()) {
             logger.info() << "Body: " << request.getBody() << std::endl;
         }
-        // Find server that mach with "Host" header
-        std::vector<Server>::const_iterator server = findServer(request.getHeaders().at("Host"));
 
-        // Find location in server that mach with URI
+        // Find server that match with "Host" header
+        std::vector<Server>::const_iterator server = findServer(request.getHeaders().at(HttpRequest::HEADER_HOST_KEY));
+
+        // Find location in server that match with URI
         std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
+        (void) location;
 
         // Process request
         send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", 38, 0);
@@ -174,8 +179,11 @@ int ServerManager::getFd() const {
 }
 
 std::vector<Server>::const_iterator ServerManager::findServer(const std::string &host) const {
+    size_t pos = host.find(':');
+    std::string serverName = (pos == std::string::npos) ? host : host.substr(0, pos);
+
     for (std::vector<Server>::const_iterator it = servers.begin(); it != servers.end(); ++it) {
-        if (it->getName() == host) {
+        if (it->getName() == serverName) {
             return (it);
         }
     }

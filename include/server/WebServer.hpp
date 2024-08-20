@@ -26,7 +26,7 @@ class WebServer {
     std::vector<struct pollfd> fds;
     std::vector<ServerManager> servers;
 
-    static void verifyServers(std::vector<ServerConfig> serversConfig);
+    static void verifyDuplicatedServers(std::vector<ServerConfig> serversConfig);
     std::vector<ServerManager>::iterator findServerFd(int fd);
     void addNewClient(int serverFd);
     void removeClient(int clientfd);
