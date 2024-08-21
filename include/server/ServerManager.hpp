@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "Server.hpp"
@@ -40,6 +42,7 @@ class ServerManager {
     std::vector<Server> servers;
     std::vector<int> clientSockets;
     HttpRequest request;
+    HttpResponse response;
 
     int removeClient(int clientSocket);
 };

@@ -10,7 +10,7 @@
 const size_t ServerManager::MAX_CLIENTS = 1000;
 const size_t ServerManager::READ_BUFFER_SIZE = 1024;
 
-ServerManager::ServerManager() : logger(Logger("SERVER_MANAGER")), socketFd(0), port(-1), host(INADDR_ANY), servers(std::vector<Server>()), clientSockets(std::vector<int>()), request(HttpRequest()) {}
+ServerManager::ServerManager() : logger(Logger("SERVER_MANAGER")), socketFd(0), port(-1), host(INADDR_ANY), servers(std::vector<Server>()), clientSockets(std::vector<int>()), request(HttpRequest()), response(HttpResponse()) {}
 
 ServerManager::ServerManager(const std::vector<ServerConfig>& serverConfig) {
     logger = Logger("SERVER_MANAGER");
@@ -19,6 +19,7 @@ ServerManager::ServerManager(const std::vector<ServerConfig>& serverConfig) {
     host = serverConfig.front().getHost();
     clientSockets = std::vector<int>();
     request = HttpRequest();
+    response = HttpResponse();
 
     for (std::vector<ServerConfig>::const_iterator it = serverConfig.begin(); it != serverConfig.end(); ++it) {
         servers.push_back(Server(*it));
@@ -38,6 +39,7 @@ ServerManager& ServerManager::operator=(const ServerManager& other) {
         servers = other.servers;
         clientSockets = other.clientSockets;
         request = other.request;
+        response = other.response;
     }
     return (*this);
 }
@@ -47,13 +49,13 @@ ServerManager::~ServerManager() {}
 int ServerManager::initServer() {
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
 
-    # ifndef __APPLE__
+#ifndef __APPLE__
     int optval = 1;
     if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval, sizeof(optval)) == -1) {
         close(socketFd);
         throw createError("setsockopt");
     }
-    # endif
+#endif
 
     struct sockaddr_in server_addr;
     std::memset((char*)&server_addr, 0, sizeof(server_addr));
@@ -127,6 +129,10 @@ int ServerManager::readFromClient(int clientSocket) {
     }
 
     if (!request.digestRequest(std::string(buffer, bytesRead))) {
+        response.setHttpStatus(400);
+        std::string responseString = response.createResponse();
+        send(clientSocket, responseString.c_str(), responseString.size(), 0);
+
         logger.error() << "Error: failed to parse request" << std::endl;
         return (removeClient(clientSocket));
     }
@@ -146,10 +152,13 @@ int ServerManager::readFromClient(int clientSocket) {
 
         // Find location in server that match with URI
         std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
-        (void) location;
+        (void)location;
 
         // Process request
-        send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", 38, 0);
+        response.setHttpStatus(400);
+        std::string responseString = response.createResponse();
+        send(clientSocket, responseString.c_str(), responseString.size(), 0);
+
         request.clear();
     }
 
@@ -178,7 +187,7 @@ int ServerManager::getFd() const {
     return (socketFd);
 }
 
-std::vector<Server>::const_iterator ServerManager::findServer(const std::string &host) const {
+std::vector<Server>::const_iterator ServerManager::findServer(const std::string& host) const {
     size_t pos = host.find(':');
     std::string serverName = (pos == std::string::npos) ? host : host.substr(0, pos);
 

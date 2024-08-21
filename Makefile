@@ -28,6 +28,7 @@ SRCS	= model/Method.cpp \
 				server/Location.cpp \
 				server/Server.cpp \
 				server/ServerManager.cpp \
+				server/HttpResponse.cpp \
 				server/WebServer.cpp \
 				utils/Logger.cpp \
 				utils/utils.cpp

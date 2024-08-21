@@ -15,6 +15,3 @@ SERVER_NAME = incesitivo
 ENDPOINTS são sentivos
 /API/ é diferente de /api/
 
-
-
-// location duplicado dá errado!!!
