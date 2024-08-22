@@ -4,10 +4,11 @@
 #include <ctime>
 #include <sstream>
 
-const std::string HttpResponse::serverName = "Webserver/1.0";
-const std::string HttpResponse::httpVersion = "HTTP/1.1";
+const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
+const std::string HttpResponse::HTTP_VERSION = "HTTP/1.1";
+const std::string HttpResponse::DEFAULT_MIME_TYPE = "text/plain";
 
-HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified("") {}
+HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName("") {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -21,6 +22,7 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
         contentType = assign.contentType;
         body = assign.body;
         lastModified = assign.lastModified;
+        fileName = assign.fileName;
     }
 
     return *this;
@@ -33,8 +35,8 @@ std::string HttpResponse::createResponse() {
         generateDefaultErrorPage();
     }
 
-    serverResponse << httpVersion << " " << httpStatus << " " << getStatusMessage() << "\r\n";
-    serverResponse << "Server: " << serverName << "\r\n";
+    serverResponse << HTTP_VERSION << " " << httpStatus << " " << getStatusMessage() << "\r\n";
+    serverResponse << "Server: " << SERVER_NAME << "\r\n";
     serverResponse << "Date: " << createDate() << "\r\n";
 
     if (!contentType.empty())
@@ -45,6 +47,9 @@ std::string HttpResponse::createResponse() {
 
     if (!lastModified.empty())
         serverResponse << "Last-Modified: " << lastModified << "\r\n";
+
+    if (!fileName.empty())
+        serverResponse << "Content-Type: " << setContentTypeFromFilename() << "\r\n";
 
     serverResponse << "\r\n";
 
@@ -79,7 +84,7 @@ void HttpResponse::generateDefaultErrorPage() {
     errorPage << "<head><title>" << httpStatus << " " << getStatusMessage() << "</title></head>\n";
     errorPage << "<body>\n";
     errorPage << "<center><h1>" << httpStatus << " " << getStatusMessage() << "</h1></center>\n";
-    errorPage << "<hr><center>" << serverName << "</center>\n";
+    errorPage << "<hr><center>" << SERVER_NAME << "</center>\n";
     errorPage << "</body>\n";
     errorPage << "</html>\n";
 
@@ -101,6 +106,10 @@ void HttpResponse::setBody(const std::string &content) {
 
 void HttpResponse::setLastModified(const std::string &date) {
     lastModified = date;
+}
+
+void HttpResponse::setFileName(const std::string &name) {
+    fileName = name;
 }
 
 std::string HttpResponse::getStatusMessage() {
@@ -172,4 +181,39 @@ std::string HttpResponse::getStatusMessage() {
     }
 }
 
-// criar metodo para parsear o arquivo e dizer seu Content-Type
+std::string HttpResponse::setContentTypeFromFilename() {
+    static const std::pair<const char *, const char *> mimeTypesArray[] = {
+        std::make_pair("html", "text/html"),
+        std::make_pair("htm", "text/html"),
+        std::make_pair("txt", "text/plain"),
+        std::make_pair("css", "text/css"),
+        std::make_pair("js", "application/javascript"),
+        std::make_pair("json", "application/json"),
+        std::make_pair("xml", "application/xml"),
+        std::make_pair("jpg", "image/jpeg"),
+        std::make_pair("jpeg", "image/jpeg"),
+        std::make_pair("png", "image/png"),
+        std::make_pair("gif", "image/gif"),
+        std::make_pair("bmp", "image/bmp"),
+        std::make_pair("webp", "image/webp"),
+        std::make_pair("svg", "image/svg+xml"),
+        std::make_pair("ico", "image/x-icon"),
+        std::make_pair("mp4", "video/mp4"),
+        std::make_pair("avi", "video/x-msvideo"),
+        std::make_pair("mov", "video/quicktime")};
+
+    std::string extension = "";
+    std::size_t dotPos = fileName.rfind('.');
+    if (dotPos != std::string::npos) {
+        extension = fileName.substr(dotPos + 1);
+    }
+    std::string mimeType = DEFAULT_MIME_TYPE;
+    for (std::size_t i = 0; i < sizeof(mimeTypesArray) / sizeof(mimeTypesArray[0]); ++i) {
+        if (extension == mimeTypesArray[i].first) {
+            mimeType = mimeTypesArray[i].second;
+            break;
+        }
+    }
+
+    return (mimeType);
+}
