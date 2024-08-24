@@ -33,4 +33,5 @@ class HttpResponse {
     void setBody(const std::string &body);
     void setLastModified(const std::string &lastModified);
     void setFileName(const std::string &fileName);
+    void createAutoindex(std::string directoryPat);
 };

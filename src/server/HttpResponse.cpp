@@ -1,7 +1,12 @@
 #include "HttpResponse.hpp"
 
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <cstdio>
 #include <ctime>
+#include <iomanip>
 #include <sstream>
 
 const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
@@ -30,6 +35,8 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
 
 std::string HttpResponse::createResponse() {
     std::ostringstream serverResponse;
+
+    createAutoindex("/Users/beatrizdile/Documents/nginx-test");
 
     if (httpStatus >= 400 && httpStatus <= 500 && body.empty()) {
         generateDefaultErrorPage();
@@ -216,4 +223,58 @@ std::string HttpResponse::setContentTypeFromFilename() {
     }
 
     return (mimeType);
+}
+
+std::string getFileModificationDate(std::string filePath) {
+    struct stat fileInfo;
+    if (stat(filePath.c_str(), &fileInfo) != 0) {
+        return "";
+    }
+
+    std::time_t modTime = fileInfo.st_mtime;
+    struct tm *gmtTime = std::gmtime(&modTime);
+    char timeString[80];
+    std::strftime(timeString, sizeof(timeString), "%a, %d %b %Y %H:%M:%S", gmtTime);
+    return timeString;
+}
+
+void HttpResponse::createAutoindex(std::string directoryPath) {
+    DIR *dir = opendir(directoryPath.c_str());
+    if (dir == NULL) {
+        httpStatus = 404;
+        return;
+    }
+    std::ostringstream indexPage;
+    struct dirent *dent;
+
+    indexPage << "<html>\n";
+    indexPage << "<head><title> Index of " << directoryPath << "</title></head>\n";
+    indexPage << "<body><h1>Index of " << directoryPath << "</h1><hr><pre>\n";
+    indexPage << "<a href='../'>../</a>\n";
+
+    while ((dent = readdir(dir)) != NULL) {
+        std::string strName = dent->d_name;
+        if (strName == "." || strName == "..") {
+            continue;
+        }
+
+        indexPage << "<a href='" << strName << "'>" << std::setw(50) << std::left << strName + "</a>";
+
+        std::string date = getFileModificationDate(directoryPath + "/" + strName);
+        if (date.empty()) {
+            httpStatus = 500;
+            return;
+        }
+        indexPage << date;
+
+        if (dent->d_type == DT_DIR)
+            indexPage << std::setw(30) << std::right << "-" << "\n";
+        else
+            indexPage << std::setw(30) << std::right << dent->d_reclen << "\n";
+    }
+    indexPage << "</pre><hr></body></html>";
+
+    httpStatus = 200;
+    fileName = "index.html";
+    body = indexPage.str();
 }
