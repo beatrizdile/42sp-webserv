@@ -1,13 +1,5 @@
-POST /submit-form HTTP/1.1
-Host: www.example.com
-Host: www.example1.com
-
-URL = incensitivo
-METODO = sensitivo
-VERSION = sensitivo
-CHAVE DE HEADER = incensitivo
-VALOR DO HEADER = sensitivo
-SERVER_NAME = incesitivo
-
-ENDPOINTS são sentivos
-/API/ é diferente de /api/
+- [] Retornar index quando ele existir em um diretório
+- [] Tamanho dos arquivos esta errado no autoindex
+- [] Revisar status de erro que estamos retornando
+- [] Olhar para o método da requisição
+- [] Adicionar headers necessário nas respostas geradas com arquivos
