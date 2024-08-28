@@ -11,6 +11,7 @@
 class LocationConfig {
    public:
     static const size_t DEFAULT_CLIENT_BODY_SIZE;
+    static const std::string DEFAULT_INDEX;
     static const std::string INDEX_KEY;
     static const std::string ROOT_KEY;
     static const std::string REDIRECT_KEY;

@@ -21,6 +21,7 @@ class Server {
     const std::string &getName() const;
     const std::string &getRoot() const;
     bool getAutoindex() const;
+    const std::string &getIndex() const;
     const std::vector<Location> &getLocations() const;
     std::vector<Location>::const_iterator matchUri(std::string uri) const;
 

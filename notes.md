@@ -1,4 +1,4 @@
-- [] Retornar index quando ele existir em um diretório
+- [x] Retornar index quando ele existir em um diretório
 - [] Tamanho dos arquivos esta errado no autoindex
 - [] Revisar status de erro que estamos retornando
 - [] Olhar para o método da requisição

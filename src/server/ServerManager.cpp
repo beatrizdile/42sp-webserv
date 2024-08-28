@@ -1,8 +1,8 @@
 #include "ServerManager.hpp"
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -153,14 +153,15 @@ int ServerManager::readFromClient(int clientSocket) {
         // Find location in server that match with URI
         std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
 
+        // Process request
         std::string responseString;
         if (location == (*server).getLocations().end()) {
-            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getAutoindex());
+            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex());
         } else {
-            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getAutoindex());
+            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex());
         }
-
         send(clientSocket, responseString.c_str(), responseString.size(), 0);
+
         request.clear();
     }
 
@@ -179,7 +180,7 @@ std::string ServerManager::createPath(const std::string& root, const std::string
     return (root + uri);
 }
 
-std::string ServerManager::processRequest(const std::string& root, const std::string& uri, bool isAutoindex) {
+std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex) {
     std::string path = createPath(root, uri);
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == -1) {
@@ -187,7 +188,9 @@ std::string ServerManager::processRequest(const std::string& root, const std::st
     }
 
     if (S_ISDIR(fileStat.st_mode)) {
-        if (isAutoindex) {
+        if (access((path + "/" + index).c_str(), F_OK) != -1) {
+            return (response.createFileResponse(path + "/" + index));
+        } else if (isAutoindex) {
             return (response.createIndexResponse(path, uri));
         } else {
             return (response.createResponseFromStatus(403));

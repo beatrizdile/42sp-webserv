@@ -8,7 +8,7 @@ const std::string ServerConfig::LISTEN_KEY = "listen";
 const std::string ServerConfig::SERVER_NAME_KEY = "server_name";
 const std::string ServerConfig::LOCATION_KEY = "location";
 
-ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+ServerConfig::ServerConfig() : logger(Logger("SERVER_CONFIG")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<LocationConfig>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 ServerConfig::ServerConfig(const ServerConfig& other) {
     *this = other;

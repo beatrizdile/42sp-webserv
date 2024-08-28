@@ -6,7 +6,7 @@
 #include <cerrno>
 #include <cstring>
 
-Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(""), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 Server::Server(const ServerConfig& serverConfig) {
     logger = Logger("SERVER");
@@ -92,4 +92,8 @@ bool Server::getAutoindex() const {
 
 const std::vector<Location> &Server::getLocations() const {
     return (locations);
+}
+
+const std::string &Server::getIndex() const {
+    return (index);
 }

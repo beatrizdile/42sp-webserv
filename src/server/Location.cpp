@@ -1,6 +1,6 @@
 #include "Location.hpp"
 
-Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(""), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 Location::Location(const LocationConfig& locationConfig) {
     logger = Logger("LOCATION");
@@ -45,4 +45,8 @@ const std::string &Location::getRoot() const {
 
 bool Location::getAutoindex() const {
     return (autoindex);
+}
+
+const std::string &Location::getIndex() const {
+    return (index);
 }

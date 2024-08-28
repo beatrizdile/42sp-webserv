@@ -10,8 +10,9 @@ const std::string LocationConfig::CLIENT_BODY_SIZE_KEY = "client_max_body_size";
 const std::string LocationConfig::ALLOW_METHODS_KEY = "allow_methods";
 const std::string LocationConfig::ERROR_PAGE_KEY = "error_page";
 const std::string LocationConfig::AUTOINDEX_KEY = "autoindex";
+const std::string LocationConfig::DEFAULT_INDEX = "index.html";
 
-LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(""), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(DEFAULT_INDEX), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
 LocationConfig::LocationConfig(const LocationConfig& other) {
     *this = other;
