@@ -38,3 +38,11 @@ Location::~Location() {}
 const std::string& Location::getPath() const {
     return (path);
 }
+
+const std::string &Location::getRoot() const {
+    return (root);
+}
+
+bool Location::getAutoindex() const {
+    return (autoindex);
+}

@@ -17,6 +17,10 @@ class HttpResponse {
     std::string createDate();
     std::string getStatusMessage();
     std::string setContentTypeFromFilename();
+    void createAutoindex(const std::string &directoryPath, const std::string &uri);
+    void clear();
+    void generateDefaultErrorPage();
+    std::string createResponse();
 
    public:
     HttpResponse();
@@ -24,14 +28,7 @@ class HttpResponse {
     ~HttpResponse();
     HttpResponse &operator=(const HttpResponse &assign);
 
-    std::string createResponse();
-    void clear();
-    void generateDefaultErrorPage();
-
-    void setHttpStatus(int status);
-    void setContentType(const std::string &type);
-    void setBody(const std::string &body);
-    void setLastModified(const std::string &lastModified);
-    void setFileName(const std::string &fileName);
-    void createAutoindex(std::string directoryPat);
+    std::string createResponseFromStatus(int status);
+    std::string createIndexResponse(const std::string& directoryPath, const std::string& uri);
+    std::string createFileResponse(const std::string& filename);
 };

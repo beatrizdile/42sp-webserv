@@ -81,3 +81,15 @@ std::vector<Location>::const_iterator Server::matchUri(std::string uri) const {
 const std::string &Server::getName() const {
     return (name);
 }
+
+const std::string &Server::getRoot() const {
+    return (root);
+}
+
+bool Server::getAutoindex() const {
+    return (autoindex);
+}
+
+const std::vector<Location> &Server::getLocations() const {
+    return (locations);
+}

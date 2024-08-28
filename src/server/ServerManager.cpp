@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -129,8 +130,7 @@ int ServerManager::readFromClient(int clientSocket) {
     }
 
     if (!request.digestRequest(std::string(buffer, bytesRead))) {
-        response.setHttpStatus(400);
-        std::string responseString = response.createResponse();
+        std::string responseString = response.createResponseFromStatus(400);
         send(clientSocket, responseString.c_str(), responseString.size(), 0);
 
         logger.error() << "Error: failed to parse request" << std::endl;
@@ -152,17 +152,51 @@ int ServerManager::readFromClient(int clientSocket) {
 
         // Find location in server that match with URI
         std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
-        (void)location;
 
-        // Process request
-        response.setHttpStatus(400);
-        std::string responseString = response.createResponse();
+        std::string responseString;
+        if (location == (*server).getLocations().end()) {
+            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getAutoindex());
+        } else {
+            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getAutoindex());
+        }
+
         send(clientSocket, responseString.c_str(), responseString.size(), 0);
-
         request.clear();
     }
 
     return (0);
+}
+
+std::string ServerManager::createPath(const std::string& root, const std::string& uri) {
+    if (root.empty()) {
+        return (uri);
+    }
+
+    if (root[root.size() - 1] == '/') {
+        return (root.substr(0, root.size() - 1) + uri);
+    }
+
+    return (root + uri);
+}
+
+std::string ServerManager::processRequest(const std::string& root, const std::string& uri, bool isAutoindex) {
+    std::string path = createPath(root, uri);
+    struct stat fileStat;
+    if (stat(path.c_str(), &fileStat) == -1) {
+        return (response.createResponseFromStatus(404));
+    }
+
+    if (S_ISDIR(fileStat.st_mode)) {
+        if (isAutoindex) {
+            return (response.createIndexResponse(path, uri));
+        } else {
+            return (response.createResponseFromStatus(403));
+        }
+    } else if (S_ISREG(fileStat.st_mode)) {
+        return (response.createFileResponse(path));
+    } else {
+        return (response.createResponseFromStatus(404));
+    }
 }
 
 int ServerManager::removeClient(int clientSocket) {

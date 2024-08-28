@@ -45,4 +45,6 @@ class ServerManager {
     HttpResponse response;
 
     int removeClient(int clientSocket);
+    std::string createPath(const std::string& root, const std::string& uri);
+    std::string processRequest(const std::string& root, const std::string& uri, bool isAutoindex);
 };

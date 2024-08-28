@@ -19,6 +19,9 @@ class Server {
     int getPort() const;
     in_addr_t getHost() const;
     const std::string &getName() const;
+    const std::string &getRoot() const;
+    bool getAutoindex() const;
+    const std::vector<Location> &getLocations() const;
     std::vector<Location>::const_iterator matchUri(std::string uri) const;
 
    private:

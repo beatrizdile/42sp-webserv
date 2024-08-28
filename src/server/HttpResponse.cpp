@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 
@@ -36,8 +37,6 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
 std::string HttpResponse::createResponse() {
     std::ostringstream serverResponse;
 
-    createAutoindex("/Users/beatrizdile/Documents/nginx-test");
-
     if (httpStatus >= 400 && httpStatus <= 500 && body.empty()) {
         generateDefaultErrorPage();
     }
@@ -64,8 +63,6 @@ std::string HttpResponse::createResponse() {
         serverResponse << body;
     }
 
-    clear();
-
     return serverResponse.str();
 }
 
@@ -74,6 +71,7 @@ void HttpResponse::clear() {
     contentType.clear();
     body.clear();
     lastModified.clear();
+    fileName.clear();
 }
 
 std::string HttpResponse::createDate() {
@@ -97,26 +95,6 @@ void HttpResponse::generateDefaultErrorPage() {
 
     body = errorPage.str();
     contentType = "text/html";
-}
-
-void HttpResponse::setHttpStatus(int status) {
-    httpStatus = status;
-}
-
-void HttpResponse::setContentType(const std::string &type) {
-    contentType = type;
-}
-
-void HttpResponse::setBody(const std::string &content) {
-    body = content;
-}
-
-void HttpResponse::setLastModified(const std::string &date) {
-    lastModified = date;
-}
-
-void HttpResponse::setFileName(const std::string &name) {
-    fileName = name;
 }
 
 std::string HttpResponse::getStatusMessage() {
@@ -238,7 +216,7 @@ std::string getFileModificationDate(std::string filePath) {
     return timeString;
 }
 
-void HttpResponse::createAutoindex(std::string directoryPath) {
+void HttpResponse::createAutoindex(const std::string &directoryPath, const std::string &uri) {
     DIR *dir = opendir(directoryPath.c_str());
     if (dir == NULL) {
         httpStatus = 404;
@@ -248,8 +226,8 @@ void HttpResponse::createAutoindex(std::string directoryPath) {
     struct dirent *dent;
 
     indexPage << "<html>\n";
-    indexPage << "<head><title> Index of " << directoryPath << "</title></head>\n";
-    indexPage << "<body><h1>Index of " << directoryPath << "</h1><hr><pre>\n";
+    indexPage << "<head><title> Index of " << uri << "</title></head>\n";
+    indexPage << "<body><h1>Index of " << uri << "</h1><hr><pre>\n";
     indexPage << "<a href='../'>../</a>\n";
 
     while ((dent = readdir(dir)) != NULL) {
@@ -258,7 +236,7 @@ void HttpResponse::createAutoindex(std::string directoryPath) {
             continue;
         }
 
-        indexPage << "<a href='" << strName << "'>" << std::setw(50) << std::left << strName + "</a>";
+        indexPage << "<a href='" << strName + ((dent->d_type == DT_DIR) ? "/" : "") << "'>" << std::setw(50) << std::left << strName + "</a>";
 
         std::string date = getFileModificationDate(directoryPath + "/" + strName);
         if (date.empty()) {
@@ -277,4 +255,36 @@ void HttpResponse::createAutoindex(std::string directoryPath) {
     httpStatus = 200;
     fileName = "index.html";
     body = indexPage.str();
+}
+
+std::string HttpResponse::createResponseFromStatus(int status) {
+    httpStatus = status;
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
+}
+
+std::string HttpResponse::createIndexResponse(const std::string &directoryPath, const std::string &uri) {
+    createAutoindex(directoryPath, uri);
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
+}
+
+std::string HttpResponse::createFileResponse(const std::string &filename) {
+    std::ifstream file(filename.c_str());
+    if (!file.is_open()) {
+        httpStatus = 404;
+    } else {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        body = buffer.str();
+        this->fileName = filename;
+        httpStatus = 200;
+        file.close();
+    }
+
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
 }

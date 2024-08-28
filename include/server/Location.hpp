@@ -15,6 +15,8 @@ class Location {
     ~Location();
 
     const std::string &getPath() const;
+    const std::string &getRoot() const;
+    bool getAutoindex() const;
 
    private:
     Logger logger;
