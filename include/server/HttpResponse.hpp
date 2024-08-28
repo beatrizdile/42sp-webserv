@@ -13,6 +13,7 @@ class HttpResponse {
     std::string body;
     std::string lastModified;
     std::string fileName;
+    std::string etag;
 
     std::string createDate();
     std::string getStatusMessage();
@@ -21,6 +22,7 @@ class HttpResponse {
     void clear();
     void generateDefaultErrorPage();
     std::string createResponse();
+    void generateEtag(const std::string &filePath);
 
    public:
     HttpResponse();
@@ -30,5 +32,5 @@ class HttpResponse {
 
     std::string createResponseFromStatus(int status);
     std::string createIndexResponse(const std::string& directoryPath, const std::string& uri);
-    std::string createFileResponse(const std::string& filename);
+    std::string createFileResponse(const std::string& filePath);
 };
