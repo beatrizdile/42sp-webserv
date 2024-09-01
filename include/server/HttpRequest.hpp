@@ -24,6 +24,7 @@ class HttpRequest {
     const std::map<std::string, std::string> &getHeaders() const;
     const std::string &getBody() const;
     bool isComplete() const;
+    std::string getEtag() const;
 
    private:
     Logger logger;
@@ -43,6 +44,7 @@ class HttpRequest {
     static const std::string CONTENT_LENTH;
     static const std::string HTTP_VERSION;
     static const std::string CONTENT_LENTH_HEADER_KEY;
+    static const std::string HEADER_ETAG_KEY;
 
     void parseFristLine();
     void parseHeaders(size_t endPos);

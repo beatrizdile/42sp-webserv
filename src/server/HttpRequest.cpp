@@ -14,6 +14,7 @@ const std::string HttpRequest::HEADER_VALUE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUV
 const std::string HttpRequest::HEADER_KEY_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
 const std::string HttpRequest::HTTP_VERSION = "HTTP/1.1";
 const std::string HttpRequest::CONTENT_LENTH_HEADER_KEY = "content-length";
+const std::string HttpRequest::HEADER_ETAG_KEY = "if-none-match";
 
 HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
 
@@ -188,4 +189,11 @@ const std::string &HttpRequest::getBody() const {
 
 bool HttpRequest::isComplete() const {
     return (complete);
+}
+
+std::string HttpRequest::getEtag() const {
+    if (headers.find(HEADER_ETAG_KEY) != headers.end()) {
+        return headers.at(HEADER_ETAG_KEY);
+    }
+    return "";
 }

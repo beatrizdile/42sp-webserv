@@ -59,7 +59,7 @@ std::string HttpResponse::createResponse() {
         serverResponse << "Content-Type: " << setContentTypeFromFilename() << "\r\n";
 
     if (!etag.empty())
-        serverResponse << "ETag: \"" << etag << "\"\r\n";
+        serverResponse << "ETag: " << etag << "\r\n";
 
     serverResponse << "\r\n";
 
@@ -208,11 +208,8 @@ std::string HttpResponse::setContentTypeFromFilename() {
     return (mimeType);
 }
 
-std::string getFileModificationDate(std::string filePath, bool gmt) {
-    struct stat fileInfo;
-    if (stat(filePath.c_str(), &fileInfo) != 0) {
-        return "";
-    }
+std::string getFileModificationDate(const struct stat &fileInfo, bool gmt) {
+
 
     std::time_t modTime = fileInfo.st_mtime;
     struct tm *gmtTime = std::gmtime(&modTime);
@@ -243,7 +240,14 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
 
         indexPage << "<a href='" << strName + ((dent->d_type == DT_DIR) ? "/" : "") << "'>" << std::setw(50) << std::left << strName + "</a>";
 
-        std::string date = getFileModificationDate(directoryPath + "/" + strName, false);
+
+        struct stat fileInfo;
+        if (stat((directoryPath + "/" + strName).c_str(), &fileInfo) != 0) {
+            httpStatus = 500;
+            return;
+        }
+
+        std::string date = getFileModificationDate(fileInfo, false);
         if (date.empty()) {
             httpStatus = 500;
             return;
@@ -253,7 +257,7 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         if (dent->d_type == DT_DIR)
             indexPage << std::setw(30) << std::right << "-" << "\n";
         else
-            indexPage << std::setw(30) << std::right << dent->d_reclen << "\n";
+            indexPage << std::setw(30) << std::right << fileInfo.st_size << "\n";
     }
     indexPage << "</pre><hr></body></html>";
 
@@ -276,29 +280,35 @@ std::string HttpResponse::createIndexResponse(const std::string &directoryPath, 
     return (responseString);
 }
 
-void HttpResponse::generateEtag(const std::string &filePath) {
-    struct stat fileInfo;
-    if (stat(filePath.c_str(), &fileInfo) != 0) {
-        return;
-    }
-
+void HttpResponse::generateEtag(const struct stat &fileInfo) {
     std::ostringstream etagStream;
-    etagStream << std::hex << fileInfo.st_mtime << "-" << fileInfo.st_size;
+    etagStream << std::hex << '"' << fileInfo.st_mtime << "-" << fileInfo.st_size << '"';
     etag = etagStream.str();
 }
 
-std::string HttpResponse::createFileResponse(const std::string &filePath) {
+std::string HttpResponse::createFileResponse(const std::string &filePath, const std::string &etag) {
     std::ifstream file(filePath.c_str());
     if (!file.is_open()) {
         httpStatus = 404;
     } else {
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        body = buffer.str();
-        this->fileName = filePath;
-        lastModified = getFileModificationDate(filePath, true);
-        generateEtag(filePath);
-        httpStatus = 200;
+        struct stat fileInfo;
+        if (stat(filePath.c_str(), &fileInfo) != 0) {
+            httpStatus = 500;
+        }
+        else {
+            lastModified = getFileModificationDate(fileInfo, true);
+            generateEtag(fileInfo);
+            if (this->etag == etag) {
+                httpStatus = 304;
+            }
+            else {
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                body = buffer.str();
+                this->fileName = filePath;
+                httpStatus = 200;
+            }
+        }
         file.close();
     }
 

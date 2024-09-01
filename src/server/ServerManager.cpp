@@ -186,17 +186,18 @@ std::string ServerManager::processRequest(const std::string& root, const std::st
     if (stat(path.c_str(), &fileStat) == -1) {
         return (response.createResponseFromStatus(404));
     }
+    std::string etag = request.getEtag();
 
     if (S_ISDIR(fileStat.st_mode)) {
         if (access((path + "/" + index).c_str(), F_OK) != -1) {
-            return (response.createFileResponse(path + "/" + index));
+            return (response.createFileResponse(path + "/" + index, etag));
         } else if (isAutoindex) {
             return (response.createIndexResponse(path, uri));
         } else {
             return (response.createResponseFromStatus(403));
         }
     } else if (S_ISREG(fileStat.st_mode)) {
-        return (response.createFileResponse(path));
+        return (response.createFileResponse(path, etag));
     } else {
         return (response.createResponseFromStatus(404));
     }

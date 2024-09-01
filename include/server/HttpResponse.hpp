@@ -22,7 +22,7 @@ class HttpResponse {
     void clear();
     void generateDefaultErrorPage();
     std::string createResponse();
-    void generateEtag(const std::string &filePath);
+    void generateEtag(const struct stat &fileInfo);
 
    public:
     HttpResponse();
@@ -32,5 +32,5 @@ class HttpResponse {
 
     std::string createResponseFromStatus(int status);
     std::string createIndexResponse(const std::string& directoryPath, const std::string& uri);
-    std::string createFileResponse(const std::string& filePath);
+    std::string createFileResponse(const std::string &filePath, const std::string &etag);
 };
