@@ -132,8 +132,13 @@ int ServerManager::handleClient(int clientSocket) {
 
     if (!request.digestRequest(std::string(buffer, bytesRead))) {
         std::string responseString = response.createResponseFromStatus(400);
-        if (send(clientSocket, responseString.c_str(), responseString.size(), 0) == -1) {
+        ssize_t bytesSend = send(clientSocket, responseString.c_str(), responseString.size(), 0);
+        if (bytesSend == -1) {
             logger.perror("send");
+            return (removeClient(clientSocket));
+        }
+        if (bytesSend != static_cast<ssize_t>(responseString.size())) {
+            logger.error() << "Error: failed to send response" << std::endl;
             return (removeClient(clientSocket));
         }
 
@@ -215,7 +220,9 @@ std::string ServerManager::processGetRequest(const std::string& path, const std:
     std::string etag = request.getEtag();
 
     if (S_ISDIR(fileStat.st_mode)) {
-        if (access((path + "/" + index).c_str(), F_OK) != -1) {
+        if (path[path.size() - 1] != '/') {
+            return (response.createResponseFromStatus(301));
+        } else if (access((path + "/" + index).c_str(), F_OK) != -1) {
             return (response.createFileResponse(path + "/" + index, etag));
         } else if (isAutoindex) {
             return (response.createIndexResponse(path, uri));
@@ -247,11 +254,35 @@ std::string ServerManager::processPostRequest(const std::string& path, const std
     return (response.createResponseFromLocation(201, uri, request.getBody()));
 }
 
+static bool isDirectory(const std::string& path) {
+    struct stat pathStat;
+    
+    if (stat(path.c_str(), &pathStat) != 0) {
+        return false;
+    }
+    
+    return S_ISDIR(pathStat.st_mode);
+}
+
 std::string ServerManager::processDeleteRequest(const std::string& path) {
     if (access(path.c_str(), F_OK) == -1) {
         return (response.createResponseFromStatus(404));
     }
-    if (remove(path.c_str()) == -1) {
+    if (access(path.c_str(), W_OK) == -1) {
+        return (response.createResponseFromStatus(403));
+    }
+
+    if (isDirectory(path)) {
+        if (path[path.size() - 1] != '/') {
+            return (response.createResponseFromStatus(409));
+        }
+
+        std::string	command = "rm -rf " + path;
+		int result = std::system(command.c_str());
+		if (result == 0)
+            return (response.createResponseFromStatus((204)));
+		return (response.createResponseFromStatus((500)));
+    } else if (remove(path.c_str()) == -1) {
         return (response.createResponseFromStatus(500));
     }
 

@@ -1,7 +1,12 @@
-- [] Revisar status de erro que estamos retornando
-- [] Olhar para o método da requisição
-- [] implementar POST
-- [] olhar o tamanho max body size
+Mandatorio:
 - [] setar pagina de erro de acordo com nginx
-- [] implementar o DELETE
-- [] se mantém a conexão keep alive
+- [] Redirect
+- [] CGI
+
+Tests:
+- [] Testar enviar uma requisição errada, não deve crashar
+- [] Testar upload de arquivos grandes
+- [] Verificar memory leak com valgrid
+
+Extra:
+- [] se mantém a conexão keep alive (opcional)
