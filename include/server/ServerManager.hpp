@@ -28,7 +28,7 @@ class ServerManager {
     int getPort() const;
     in_addr_t getHost() const;
     int getFd() const;
-    int readFromClient(int clientSocket);
+    int handleClient(int clientSocket);
     bool isClient(int clientSocket) const;
     std::vector<Server>::const_iterator findServer(const std::string &host) const;
 
@@ -45,10 +45,10 @@ class ServerManager {
     HttpResponse response;
 
     int removeClient(int clientSocket);
-    void matchUriAndResponseClient(int clientSocket);
+    int matchUriAndResponseClient(int clientSocket);
     std::string createPath(const std::string& root, const std::string& uri);
-    std::string processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, std::vector<Method> methods, size_t clientBodySize);
-    std::string processGetRequest(std::string path, std::string uri, std::string index, bool isAutoindex);
-    std::string processPostRequest(std::string path, std::string uri);
-    std::string processDeleteRequest(std::string path);
+    std::string processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method> &methods, size_t clientBodySize);
+    std::string processGetRequest(const std::string &path, const std::string & uri, const std::string &index, bool isAutoindex);
+    std::string processPostRequest(const std::string & path, const std::string & uri);
+    std::string processDeleteRequest(const std::string & path);
 };

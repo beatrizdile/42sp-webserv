@@ -115,7 +115,7 @@ int ServerManager::acceptConnection() {
     return (clientFd);
 }
 
-int ServerManager::readFromClient(int clientSocket) {
+int ServerManager::handleClient(int clientSocket) {
     char buffer[READ_BUFFER_SIZE];
     ssize_t bytesRead = 0;
 
@@ -132,39 +132,46 @@ int ServerManager::readFromClient(int clientSocket) {
 
     if (!request.digestRequest(std::string(buffer, bytesRead))) {
         std::string responseString = response.createResponseFromStatus(400);
-        send(clientSocket, responseString.c_str(), responseString.size(), 0);
+        if (send(clientSocket, responseString.c_str(), responseString.size(), 0) == -1) {
+            logger.perror("send");
+            return (removeClient(clientSocket));
+        }
 
         logger.error() << "Error: failed to parse request" << std::endl;
         return (removeClient(clientSocket));
     }
 
     if (request.isComplete()) {
-        matchUriAndResponseClient(clientSocket);
+        return (matchUriAndResponseClient(clientSocket));
     }
 
     return (0);
 }
 
-void ServerManager::matchUriAndResponseClient(int clientSocket) {
-        logger.info() << "Request: " << getMethodString(request.getMethod()) << " " << request.getUri() << " " << request.getVersion() << std::endl;
+int ServerManager::matchUriAndResponseClient(int clientSocket) {
+    logger.info() << "Request: " << getMethodString(request.getMethod()) << " " << request.getUri() << " " << request.getVersion() << std::endl;
 
-        // Find server that match with "Host" header
-        std::vector<Server>::const_iterator server = findServer(request.getHeaders().at(HttpRequest::HEADER_HOST_KEY));
+    // Find server that match with "Host" header
+    std::vector<Server>::const_iterator server = findServer(request.getHeaders().at(HttpRequest::HEADER_HOST_KEY));
 
-        // Find location in server that match with URI
-        std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
+    // Find location in server that match with URI
+    std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
 
-        // Process request
-        std::string responseString;
-        if (location == (*server).getLocations().end()) {
-            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize());
-        } else {
-            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize());
-        }
-        logger.info() << "Response: " << responseString << std::endl;
-        send(clientSocket, responseString.c_str(), responseString.size(), 0);
+    // Process request
+    std::string responseString;
+    if (location == (*server).getLocations().end()) {
+        responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize());
+    } else {
+        responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize());
+    }
+    request.clear();
 
-        request.clear();
+    if (send(clientSocket, responseString.c_str(), responseString.size(), 0) == -1) {
+        logger.perror("send");
+        return (removeClient(clientSocket));
+    }
+
+    return (0);
 }
 
 std::string ServerManager::createPath(const std::string& root, const std::string& uri) {
@@ -179,7 +186,7 @@ std::string ServerManager::createPath(const std::string& root, const std::string
     return (root + uri);
 }
 
-std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, std::vector<Method> methods, size_t clientBodySize) {
+std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method>& methods, size_t clientBodySize) {
     std::string path = createPath(root, uri);
 
     if (std::find(methods.begin(), methods.end(), request.getMethod()) == methods.end()) {
@@ -200,7 +207,7 @@ std::string ServerManager::processRequest(const std::string& root, const std::st
     return (response.createResponseFromStatus(501));
 }
 
-std::string ServerManager::processGetRequest(std::string path, std::string uri, std::string index, bool isAutoindex) {
+std::string ServerManager::processGetRequest(const std::string& path, const std::string& uri, const std::string& index, bool isAutoindex) {
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == -1) {
         return (response.createResponseFromStatus(404));
@@ -222,7 +229,7 @@ std::string ServerManager::processGetRequest(std::string path, std::string uri, 
     }
 }
 
-std::string ServerManager::processPostRequest(std::string path, std::string uri) {
+std::string ServerManager::processPostRequest(const std::string& path, const std::string& uri) {
     if (request.getBody().empty()) {
         return (response.createResponseFromStatus(400));
     }
@@ -240,7 +247,7 @@ std::string ServerManager::processPostRequest(std::string path, std::string uri)
     return (response.createResponseFromLocation(201, uri, request.getBody()));
 }
 
-std::string ServerManager::processDeleteRequest(std::string path) {
+std::string ServerManager::processDeleteRequest(const std::string& path) {
     if (access(path.c_str(), F_OK) == -1) {
         return (response.createResponseFromStatus(404));
     }

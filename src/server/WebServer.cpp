@@ -94,7 +94,7 @@ void WebServer::runServers() {
                 } else {
                     for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
                         if ((*it).isClient((*fd).fd)) {
-                            if ((*it).readFromClient((*fd).fd) != 0) {
+                            if ((*it).handleClient((*fd).fd) != 0) {
                                 fdsToRemove.push_back((*fd).fd);
                             }
                             break;
