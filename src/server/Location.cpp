@@ -10,6 +10,9 @@ Location::Location(const LocationConfig& locationConfig) {
     redirect = locationConfig.getRedirect();
     clientBodySize = locationConfig.getClientBodySize();
     methods = locationConfig.getMethods();
+    if (methods.empty()) {
+        methods.push_back(GET);
+    }
     errorPages = locationConfig.getErrorPages();
     autoindex = locationConfig.getAutoindex();
 }
@@ -49,4 +52,12 @@ bool Location::getAutoindex() const {
 
 const std::string &Location::getIndex() const {
     return (index);
+}
+
+const std::vector<Method> &Location::getMethods() const {
+    return (methods);
+}
+
+size_t Location::getClientBodySize() const {
+    return (clientBodySize);
 }

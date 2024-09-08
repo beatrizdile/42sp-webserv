@@ -1,16 +1,12 @@
 #include "Method.hpp"
 
 Method getMethodFromString(const std::string& method) {
-    if (method == "HEAD") {
-        return (HEAD);
-    } else if (method == "GET") {
+    if (method == "GET") {
         return (GET);
     } else if (method == "POST") {
         return (POST);
     } else if (method == "DELETE") {
         return (DELETE);
-    } else if (method == "OPTIONS") {
-        return (OPTIONS);
     } else {
         return (INVALID);
     }
@@ -18,16 +14,12 @@ Method getMethodFromString(const std::string& method) {
 
 std::string getMethodString(Method method) {
     switch (method) {
-        case HEAD:
-            return ("HEAD");
         case GET:
             return ("GET");
         case POST:
             return ("POST");
         case DELETE:
             return ("DELETE");
-        case OPTIONS:
-            return ("OPTIONS");
         default:
             return ("INVALID");
     }

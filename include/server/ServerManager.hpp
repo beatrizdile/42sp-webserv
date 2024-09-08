@@ -45,6 +45,10 @@ class ServerManager {
     HttpResponse response;
 
     int removeClient(int clientSocket);
+    void matchUriAndResponseClient(int clientSocket);
     std::string createPath(const std::string& root, const std::string& uri);
-    std::string processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex);
+    std::string processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, std::vector<Method> methods, size_t clientBodySize);
+    std::string processGetRequest(std::string path, std::string uri, std::string index, bool isAutoindex);
+    std::string processPostRequest(std::string path, std::string uri);
+    std::string processDeleteRequest(std::string path);
 };

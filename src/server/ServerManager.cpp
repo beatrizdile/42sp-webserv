@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <fstream>
 
 const size_t ServerManager::MAX_CLIENTS = 1000;
 const size_t ServerManager::READ_BUFFER_SIZE = 1024;
@@ -138,14 +139,14 @@ int ServerManager::readFromClient(int clientSocket) {
     }
 
     if (request.isComplete()) {
+        matchUriAndResponseClient(clientSocket);
+    }
+
+    return (0);
+}
+
+void ServerManager::matchUriAndResponseClient(int clientSocket) {
         logger.info() << "Request: " << getMethodString(request.getMethod()) << " " << request.getUri() << " " << request.getVersion() << std::endl;
-        logger.info() << "Headers ---------------------" << std::endl;
-        for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
-            logger.info() << it->first << ": " << it->second << std::endl;
-        }
-        if (!request.getBody().empty()) {
-            logger.info() << "Body: " << request.getBody() << std::endl;
-        }
 
         // Find server that match with "Host" header
         std::vector<Server>::const_iterator server = findServer(request.getHeaders().at(HttpRequest::HEADER_HOST_KEY));
@@ -156,16 +157,14 @@ int ServerManager::readFromClient(int clientSocket) {
         // Process request
         std::string responseString;
         if (location == (*server).getLocations().end()) {
-            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex());
+            responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize());
         } else {
-            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex());
+            responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize());
         }
+        logger.info() << "Response: " << responseString << std::endl;
         send(clientSocket, responseString.c_str(), responseString.size(), 0);
 
         request.clear();
-    }
-
-    return (0);
 }
 
 std::string ServerManager::createPath(const std::string& root, const std::string& uri) {
@@ -180,8 +179,28 @@ std::string ServerManager::createPath(const std::string& root, const std::string
     return (root + uri);
 }
 
-std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex) {
+std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, std::vector<Method> methods, size_t clientBodySize) {
     std::string path = createPath(root, uri);
+
+    if (std::find(methods.begin(), methods.end(), request.getMethod()) == methods.end()) {
+        return (response.createResponseFromStatus(405));
+    }
+
+    if (request.getBody().size() > clientBodySize) {
+        return (response.createResponseFromStatus(413));
+    }
+
+    if (request.getMethod() == GET) {
+        return (processGetRequest(path, uri, index, isAutoindex));
+    } else if (request.getMethod() == POST) {
+        return (processPostRequest(path, uri));
+    } else if (request.getMethod() == DELETE) {
+        return (processDeleteRequest(path));
+    }
+    return (response.createResponseFromStatus(501));
+}
+
+std::string ServerManager::processGetRequest(std::string path, std::string uri, std::string index, bool isAutoindex) {
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == -1) {
         return (response.createResponseFromStatus(404));
@@ -201,6 +220,35 @@ std::string ServerManager::processRequest(const std::string& root, const std::st
     } else {
         return (response.createResponseFromStatus(404));
     }
+}
+
+std::string ServerManager::processPostRequest(std::string path, std::string uri) {
+    if (request.getBody().empty()) {
+        return (response.createResponseFromStatus(400));
+    }
+    if (access(path.c_str(), F_OK) != -1) {
+        return (response.createResponseFromStatus(409));
+    }
+    std::ofstream file(path.c_str());
+    if (!file.is_open()) {
+        return (response.createResponseFromStatus(500));
+    }
+
+    file << request.getBody();
+    file.close();
+
+    return (response.createResponseFromLocation(201, uri, request.getBody()));
+}
+
+std::string ServerManager::processDeleteRequest(std::string path) {
+    if (access(path.c_str(), F_OK) == -1) {
+        return (response.createResponseFromStatus(404));
+    }
+    if (remove(path.c_str()) == -1) {
+        return (response.createResponseFromStatus(500));
+    }
+
+    return (response.createResponseFromStatus(204));
 }
 
 int ServerManager::removeClient(int clientSocket) {

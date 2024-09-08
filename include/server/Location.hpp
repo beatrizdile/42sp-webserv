@@ -16,7 +16,9 @@ class Location {
 
     const std::string &getPath() const;
     const std::string &getRoot() const;
+    size_t getClientBodySize() const;
     const std::string &getIndex() const;
+    const std::vector<Method> &getMethods() const;
     bool getAutoindex() const;
 
    private:

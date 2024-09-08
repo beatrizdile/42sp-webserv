@@ -23,6 +23,8 @@ class Server {
     bool getAutoindex() const;
     const std::string &getIndex() const;
     const std::vector<Location> &getLocations() const;
+    const std::vector<Method> &getMethods() const;
+    size_t getClientBodySize() const;
     std::vector<Location>::const_iterator matchUri(std::string uri) const;
 
    private:

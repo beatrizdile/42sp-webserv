@@ -58,6 +58,9 @@ std::string HttpResponse::createResponse() {
     if (!fileName.empty())
         serverResponse << "Content-Type: " << setContentTypeFromFilename() << "\r\n";
 
+    if (!location.empty())
+        serverResponse << "Location: " << location << "\r\n";
+
     if (!etag.empty())
         serverResponse << "ETag: " << etag << "\r\n";
 
@@ -68,6 +71,15 @@ std::string HttpResponse::createResponse() {
     }
 
     return serverResponse.str();
+}
+
+std::string HttpResponse::createResponseFromLocation(int status, const std::string& location, const std::string& body) {
+    httpStatus = status;
+    this->location = location;
+    this->body = body;
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
 }
 
 void HttpResponse::clear() {
