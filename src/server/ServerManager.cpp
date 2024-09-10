@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <cerrno>
 #include <cstring>
 #include <fstream>
 
@@ -121,12 +120,12 @@ int ServerManager::handleClient(int clientSocket) {
 
     bytesRead = recv(clientSocket, buffer, READ_BUFFER_SIZE, 0);
     if (bytesRead == -1) {
-        logger.error() << "Error: " << strerror(errno) << std::endl;
+        logger.perror("recv");
         return (removeClient(clientSocket));
     }
 
     if (bytesRead == 0) {
-        logger.info() << "Client disconnected" << std::endl;
+        logger.info() << "Client disconnected on fd " << clientSocket << std::endl;
         return (removeClient(clientSocket));
     }
 
@@ -138,11 +137,11 @@ int ServerManager::handleClient(int clientSocket) {
             return (removeClient(clientSocket));
         }
         if (bytesSend != static_cast<ssize_t>(responseString.size())) {
-            logger.error() << "Error: failed to send response" << std::endl;
+            logger.error() << "Error: failed to send response on fd " << clientSocket << std::endl;
             return (removeClient(clientSocket));
         }
 
-        logger.error() << "Error: failed to parse request" << std::endl;
+        logger.error() << "Error: failed to parse request on fd " << clientSocket << std::endl;
         return (removeClient(clientSocket));
     }
 
@@ -221,7 +220,7 @@ std::string ServerManager::processGetRequest(const t_config& config, const std::
             return (response.createResponseFromStatus(301));
         } else if (access((path + "/" + config.index).c_str(), F_OK) != -1) {
             return (response.createFileResponse(path + "/" + config.index, etag, config.root, config.errorPages));
-        } else if (config.clientBodySize) {
+        } else if (config.isAutoindex) {
             return (response.createIndexResponse(path, uri, config.root, config.errorPages));
         } else {
             return (response.createErrorResponse(403, config.root, config.errorPages));

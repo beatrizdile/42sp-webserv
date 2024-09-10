@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cerrno>
 #include <cstring>
 
 Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>(GET)), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}

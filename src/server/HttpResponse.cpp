@@ -30,6 +30,7 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
         lastModified = assign.lastModified;
         fileName = assign.fileName;
         etag = assign.etag;
+        location = assign.location;
         hasZeroContentLength = assign.hasZeroContentLength;
     }
 
@@ -256,12 +257,14 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         struct stat fileInfo;
         if (stat((directoryPath + "/" + strName).c_str(), &fileInfo) != 0) {
             httpStatus = 500;
+            closedir(dir);
             return;
         }
 
         std::string date = getFileModificationDate(fileInfo, false);
         if (date.empty()) {
             httpStatus = 500;
+            closedir(dir);
             return;
         }
         indexPage << date;
@@ -271,6 +274,7 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         else
             indexPage << std::setw(30) << std::right << fileInfo.st_size << "\n";
     }
+    closedir(dir);
     indexPage << "</pre><hr></body></html>";
 
     httpStatus = 200;
@@ -295,6 +299,7 @@ std::string HttpResponse::createErrorResponse(size_t status, const std::string &
                 std::stringstream buffer;
                 buffer << file.rdbuf();
                 body = buffer.str();
+                file.close();
             }
         }
     }

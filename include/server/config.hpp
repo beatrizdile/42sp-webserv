@@ -9,7 +9,7 @@
 typedef struct s_config {
     bool isAutoindex;
     size_t clientBodySize;
-    const std::string &redirect;
+    const std::string redirect;
     const std::string &root;
     const std::string &index;
     const std::vector<Method> &methods;
