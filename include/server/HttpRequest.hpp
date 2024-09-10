@@ -9,6 +9,7 @@
 class HttpRequest {
    public:
     static const std::string HEADER_HOST_KEY;
+    static const std::string HEADER_CONTENT_TYPE_KEY;
 
     HttpRequest();
     HttpRequest(const HttpRequest &copy);

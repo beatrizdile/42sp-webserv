@@ -14,7 +14,7 @@ const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
 const std::string HttpResponse::HTTP_VERSION = "HTTP/1.1";
 const std::string HttpResponse::DEFAULT_MIME_TYPE = "text/plain";
 
-HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag("") {}
+HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag(""), hasZeroContentLength(false) {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -30,6 +30,7 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
         lastModified = assign.lastModified;
         fileName = assign.fileName;
         etag = assign.etag;
+        hasZeroContentLength = assign.hasZeroContentLength;
     }
 
     return *this;
@@ -49,8 +50,8 @@ std::string HttpResponse::createResponse() {
     if (!contentType.empty())
         serverResponse << "Content-Type: " << contentType << "\r\n";
 
-    if (!body.empty())
-        serverResponse << "Content-Length: " << body.size() << "\r\n";
+    if (!body.empty() || hasZeroContentLength)
+        serverResponse << "Content-Length: " << (hasZeroContentLength ? 0 : body.size()) << "\r\n";
 
     if (!lastModified.empty())
         serverResponse << "Last-Modified: " << lastModified << "\r\n";
@@ -73,10 +74,10 @@ std::string HttpResponse::createResponse() {
     return serverResponse.str();
 }
 
-std::string HttpResponse::createResponseFromLocation(int status, const std::string& location, const std::string& body) {
+std::string HttpResponse::createResponseFromLocation(int status, const std::string &location) {
     httpStatus = status;
     this->location = location;
-    this->body = body;
+    this->hasZeroContentLength = true;
     std::string responseString = createResponse();
     clear();
     return (responseString);
@@ -89,6 +90,8 @@ void HttpResponse::clear() {
     lastModified.clear();
     fileName.clear();
     etag.clear();
+    location.clear();
+    hasZeroContentLength = false;
 }
 
 std::string HttpResponse::createDate() {
@@ -221,8 +224,6 @@ std::string HttpResponse::setContentTypeFromFilename() {
 }
 
 std::string getFileModificationDate(const struct stat &fileInfo, bool gmt) {
-
-
     std::time_t modTime = fileInfo.st_mtime;
     struct tm *gmtTime = std::gmtime(&modTime);
     char timeString[80];
@@ -251,7 +252,6 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         }
 
         indexPage << "<a href='" << strName + ((dent->d_type == DT_DIR) ? "/" : "") << "'>" << std::setw(50) << std::left << strName + "</a>";
-
 
         struct stat fileInfo;
         if (stat((directoryPath + "/" + strName).c_str(), &fileInfo) != 0) {
@@ -306,14 +306,12 @@ std::string HttpResponse::createFileResponse(const std::string &filePath, const 
         struct stat fileInfo;
         if (stat(filePath.c_str(), &fileInfo) != 0) {
             httpStatus = 500;
-        }
-        else {
+        } else {
             lastModified = getFileModificationDate(fileInfo, true);
             generateEtag(fileInfo);
             if (this->etag == etag) {
                 httpStatus = 304;
-            }
-            else {
+            } else {
                 std::stringstream buffer;
                 buffer << file.rdbuf();
                 body = buffer.str();

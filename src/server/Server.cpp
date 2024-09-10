@@ -8,7 +8,7 @@
 
 Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>(GET)), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
 
-Server::Server(const ServerConfig& serverConfig) {
+Server::Server(const ServerConfig &serverConfig) {
     logger = Logger("SERVER");
     port = serverConfig.getPort();
     host = serverConfig.getHost();
@@ -29,11 +29,11 @@ Server::Server(const ServerConfig& serverConfig) {
     }
 }
 
-Server::Server(const Server& other) {
+Server::Server(const Server &other) {
     *this = other;
 }
 
-Server& Server::operator=(const Server& other) {
+Server &Server::operator=(const Server &other) {
     if (this != &other) {
         logger = other.logger;
         port = other.port;

@@ -165,14 +165,19 @@ int ServerManager::matchUriAndResponseClient(int clientSocket) {
     // Process request
     std::string responseString;
     if (location == (*server).getLocations().end()) {
-        responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize());
+        responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize(), request.getHeaders());
     } else {
-        responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize());
+        responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize(), request.getHeaders());
     }
     request.clear();
 
-    if (send(clientSocket, responseString.c_str(), responseString.size(), 0) == -1) {
+    ssize_t bytesSend = send(clientSocket, responseString.c_str(), responseString.size(), 0);
+    if (bytesSend == -1) {
         logger.perror("send");
+        return (removeClient(clientSocket));
+    }
+    if (bytesSend != static_cast<ssize_t>(responseString.size())) {
+        logger.error() << "Error: failed to send response" << std::endl;
         return (removeClient(clientSocket));
     }
 
@@ -191,7 +196,7 @@ std::string ServerManager::createPath(const std::string& root, const std::string
     return (root + uri);
 }
 
-std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method>& methods, size_t clientBodySize) {
+std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method>& methods, size_t clientBodySize, const std::map<std::string, std::string>& headers) {
     std::string path = createPath(root, uri);
 
     if (std::find(methods.begin(), methods.end(), request.getMethod()) == methods.end()) {
@@ -205,7 +210,7 @@ std::string ServerManager::processRequest(const std::string& root, const std::st
     if (request.getMethod() == GET) {
         return (processGetRequest(path, uri, index, isAutoindex));
     } else if (request.getMethod() == POST) {
-        return (processPostRequest(path, uri));
+        return (processPostRequest(path, uri, headers));
     } else if (request.getMethod() == DELETE) {
         return (processDeleteRequest(path));
     }
@@ -236,10 +241,17 @@ std::string ServerManager::processGetRequest(const std::string& path, const std:
     }
 }
 
-std::string ServerManager::processPostRequest(const std::string& path, const std::string& uri) {
+std::string ServerManager::processPostRequest(const std::string& path, const std::string& uri, const std::map<std::string, std::string>& headers) {
     if (request.getBody().empty()) {
         return (response.createResponseFromStatus(400));
     }
+
+    std::map<std::string, std::string>::const_iterator it = headers.find(HttpRequest::HEADER_CONTENT_TYPE_KEY);
+    const std::string& contentType = (it != headers.end()) ? it->second : "application/octet-stream";
+    if (contentType != "text/plain" && contentType != "application/octet-stream") {
+        return (response.createResponseFromStatus(415));
+    }
+
     if (access(path.c_str(), F_OK) != -1) {
         return (response.createResponseFromStatus(409));
     }
@@ -251,16 +263,16 @@ std::string ServerManager::processPostRequest(const std::string& path, const std
     file << request.getBody();
     file.close();
 
-    return (response.createResponseFromLocation(201, uri, request.getBody()));
+    return (response.createResponseFromLocation(201, uri));
 }
 
 static bool isDirectory(const std::string& path) {
     struct stat pathStat;
-    
+
     if (stat(path.c_str(), &pathStat) != 0) {
         return false;
     }
-    
+
     return S_ISDIR(pathStat.st_mode);
 }
 
@@ -277,11 +289,11 @@ std::string ServerManager::processDeleteRequest(const std::string& path) {
             return (response.createResponseFromStatus(409));
         }
 
-        std::string	command = "rm -rf " + path;
-		int result = std::system(command.c_str());
-		if (result == 0)
+        std::string command = "rm -rf " + path;
+        int result = std::system(command.c_str());
+        if (result == 0)
             return (response.createResponseFromStatus((204)));
-		return (response.createResponseFromStatus((500)));
+        return (response.createResponseFromStatus((500)));
     } else if (remove(path.c_str()) == -1) {
         return (response.createResponseFromStatus(500));
     }

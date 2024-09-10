@@ -15,6 +15,7 @@ class HttpResponse {
     std::string fileName;
     std::string etag;
     std::string location;
+    bool hasZeroContentLength;
 
     std::string createDate();
     std::string getStatusMessage();
@@ -32,7 +33,7 @@ class HttpResponse {
     HttpResponse &operator=(const HttpResponse &assign);
 
     std::string createResponseFromStatus(int status);
-    std::string createResponseFromLocation(int status, const std::string& location, const std::string& body);
-    std::string createIndexResponse(const std::string& directoryPath, const std::string& uri);
+    std::string createResponseFromLocation(int status, const std::string &location);
+    std::string createIndexResponse(const std::string &directoryPath, const std::string &uri);
     std::string createFileResponse(const std::string &filePath, const std::string &etag);
 };

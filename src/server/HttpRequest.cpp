@@ -15,6 +15,7 @@ const std::string HttpRequest::HEADER_KEY_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWX
 const std::string HttpRequest::HTTP_VERSION = "HTTP/1.1";
 const std::string HttpRequest::CONTENT_LENTH_HEADER_KEY = "content-length";
 const std::string HttpRequest::HEADER_ETAG_KEY = "if-none-match";
+const std::string HttpRequest::HEADER_CONTENT_TYPE_KEY = "content-type";
 
 HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
 
