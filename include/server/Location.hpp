@@ -5,6 +5,7 @@
 
 #include "LocationConfig.hpp"
 #include "Logger.hpp"
+#include "config.hpp"
 
 class Location {
    public:
@@ -20,6 +21,7 @@ class Location {
     const std::string &getIndex() const;
     const std::vector<Method> &getMethods() const;
     bool getAutoindex() const;
+    const t_config getConfig() const;
 
    private:
     Logger logger;

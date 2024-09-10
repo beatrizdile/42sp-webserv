@@ -108,3 +108,16 @@ const std::vector<Method> &Server::getMethods() const {
 size_t Server::getClientBodySize() const {
     return (clientBodySize);
 }
+
+const t_config Server::getConfig() const {
+    t_config config = {
+        autoindex,
+        clientBodySize,
+        "",
+        root,
+        index,
+        methods,
+        errorPages,
+    };
+    return (config);
+}

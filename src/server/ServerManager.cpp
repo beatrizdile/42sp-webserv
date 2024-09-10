@@ -165,9 +165,9 @@ int ServerManager::matchUriAndResponseClient(int clientSocket) {
     // Process request
     std::string responseString;
     if (location == (*server).getLocations().end()) {
-        responseString = processRequest((*server).getRoot(), request.getUri(), (*server).getIndex(), (*server).getAutoindex(), (*server).getMethods(), (*server).getClientBodySize(), request.getHeaders());
+        responseString = processRequest((*server).getConfig(), request.getUri(), request.getHeaders());
     } else {
-        responseString = processRequest((*location).getRoot(), request.getUri(), (*location).getIndex(), (*location).getAutoindex(), (*location).getMethods(), (*location).getClientBodySize(), request.getHeaders());
+        responseString = processRequest((*location).getConfig(), request.getUri(), request.getHeaders());
     }
     request.clear();
 
@@ -196,19 +196,23 @@ std::string ServerManager::createPath(const std::string& root, const std::string
     return (root + uri);
 }
 
-std::string ServerManager::processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method>& methods, size_t clientBodySize, const std::map<std::string, std::string>& headers) {
-    std::string path = createPath(root, uri);
+std::string ServerManager::processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers) {
+    if (config.redirect != "") {
+        return (response.createResponseFromLocation(301, config.redirect));
+    }
 
-    if (std::find(methods.begin(), methods.end(), request.getMethod()) == methods.end()) {
+    std::string path = createPath(config.root, uri);
+
+    if (std::find(config.methods.begin(), config.methods.end(), request.getMethod()) == config.methods.end()) {
         return (response.createResponseFromStatus(405));
     }
 
-    if (request.getBody().size() > clientBodySize) {
+    if (request.getBody().size() > config.clientBodySize) {
         return (response.createResponseFromStatus(413));
     }
 
     if (request.getMethod() == GET) {
-        return (processGetRequest(path, uri, index, isAutoindex));
+        return (processGetRequest(path, uri, config.index, config.isAutoindex));
     } else if (request.getMethod() == POST) {
         return (processPostRequest(path, uri, headers));
     } else if (request.getMethod() == DELETE) {

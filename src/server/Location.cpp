@@ -61,3 +61,17 @@ const std::vector<Method>& Location::getMethods() const {
 size_t Location::getClientBodySize() const {
     return (clientBodySize);
 }
+
+const t_config Location::getConfig() const {
+    t_config config = {
+        autoindex,
+        clientBodySize,
+        redirect,
+        root,
+        index,
+        methods,
+        errorPages,
+    };
+    return (config);
+}
+
