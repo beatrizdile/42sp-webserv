@@ -184,18 +184,6 @@ int ServerManager::matchUriAndResponseClient(int clientSocket) {
     return (0);
 }
 
-std::string ServerManager::createPath(const std::string& root, const std::string& uri) {
-    if (root.empty()) {
-        return (uri);
-    }
-
-    if (root[root.size() - 1] == '/') {
-        return (root.substr(0, root.size() - 1) + uri);
-    }
-
-    return (root + uri);
-}
-
 std::string ServerManager::processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers) {
     if (config.redirect != "") {
         return (response.createResponseFromLocation(301, config.redirect));
@@ -204,64 +192,64 @@ std::string ServerManager::processRequest(const t_config& config, const std::str
     std::string path = createPath(config.root, uri);
 
     if (std::find(config.methods.begin(), config.methods.end(), request.getMethod()) == config.methods.end()) {
-        return (response.createResponseFromStatus(405));
+        return (response.createErrorResponse(405, config.root, config.errorPages));
     }
 
     if (request.getBody().size() > config.clientBodySize) {
-        return (response.createResponseFromStatus(413));
+        return (response.createErrorResponse(413, config.root, config.errorPages));
     }
 
     if (request.getMethod() == GET) {
-        return (processGetRequest(path, uri, config.index, config.isAutoindex));
+        return (processGetRequest(config, path, uri));
     } else if (request.getMethod() == POST) {
-        return (processPostRequest(path, uri, headers));
+        return (processPostRequest(config, path, uri, headers));
     } else if (request.getMethod() == DELETE) {
-        return (processDeleteRequest(path));
+        return (processDeleteRequest(config, path));
     }
-    return (response.createResponseFromStatus(501));
+    return (response.createErrorResponse(501, config.root, config.errorPages));
 }
 
-std::string ServerManager::processGetRequest(const std::string& path, const std::string& uri, const std::string& index, bool isAutoindex) {
+std::string ServerManager::processGetRequest(const t_config& config, const std::string& path, const std::string& uri) {
     struct stat fileStat;
     if (stat(path.c_str(), &fileStat) == -1) {
-        return (response.createResponseFromStatus(404));
+        return (response.createErrorResponse(404, config.root, config.errorPages));
     }
     std::string etag = request.getEtag();
 
     if (S_ISDIR(fileStat.st_mode)) {
         if (path[path.size() - 1] != '/') {
             return (response.createResponseFromStatus(301));
-        } else if (access((path + "/" + index).c_str(), F_OK) != -1) {
-            return (response.createFileResponse(path + "/" + index, etag));
-        } else if (isAutoindex) {
-            return (response.createIndexResponse(path, uri));
+        } else if (access((path + "/" + config.index).c_str(), F_OK) != -1) {
+            return (response.createFileResponse(path + "/" + config.index, etag, config.root, config.errorPages));
+        } else if (config.clientBodySize) {
+            return (response.createIndexResponse(path, uri, config.root, config.errorPages));
         } else {
-            return (response.createResponseFromStatus(403));
+            return (response.createErrorResponse(403, config.root, config.errorPages));
         }
     } else if (S_ISREG(fileStat.st_mode)) {
-        return (response.createFileResponse(path, etag));
+        return (response.createFileResponse(path, etag, config.root, config.errorPages));
     } else {
-        return (response.createResponseFromStatus(404));
+        return (response.createErrorResponse(404, config.root, config.errorPages));
     }
 }
 
-std::string ServerManager::processPostRequest(const std::string& path, const std::string& uri, const std::map<std::string, std::string>& headers) {
+std::string ServerManager::processPostRequest(const t_config& config, const std::string& path, const std::string& uri, const std::map<std::string, std::string>& headers) {
     if (request.getBody().empty()) {
-        return (response.createResponseFromStatus(400));
+        return (response.createErrorResponse(400, config.root, config.errorPages));
     }
 
     std::map<std::string, std::string>::const_iterator it = headers.find(HttpRequest::HEADER_CONTENT_TYPE_KEY);
     const std::string& contentType = (it != headers.end()) ? it->second : "application/octet-stream";
     if (contentType != "text/plain" && contentType != "application/octet-stream") {
-        return (response.createResponseFromStatus(415));
+        return (response.createErrorResponse(415, config.root, config.errorPages));
     }
 
     if (access(path.c_str(), F_OK) != -1) {
-        return (response.createResponseFromStatus(409));
+        return (response.createErrorResponse(409, config.root, config.errorPages));
     }
     std::ofstream file(path.c_str());
     if (!file.is_open()) {
-        return (response.createResponseFromStatus(500));
+        return (response.createErrorResponse(500, config.root, config.errorPages));
     }
 
     file << request.getBody();
@@ -280,26 +268,26 @@ static bool isDirectory(const std::string& path) {
     return S_ISDIR(pathStat.st_mode);
 }
 
-std::string ServerManager::processDeleteRequest(const std::string& path) {
+std::string ServerManager::processDeleteRequest(const t_config& config, const std::string& path) {
     if (access(path.c_str(), F_OK) == -1) {
-        return (response.createResponseFromStatus(404));
+        return (response.createErrorResponse(404, config.root, config.errorPages));
     }
     if (access(path.c_str(), W_OK) == -1) {
-        return (response.createResponseFromStatus(403));
+        return (response.createErrorResponse(403, config.root, config.errorPages));
     }
 
     if (isDirectory(path)) {
         if (path[path.size() - 1] != '/') {
-            return (response.createResponseFromStatus(409));
+            return (response.createErrorResponse(409, config.root, config.errorPages));
         }
 
         std::string command = "rm -rf " + path;
         int result = std::system(command.c_str());
         if (result == 0)
             return (response.createResponseFromStatus((204)));
-        return (response.createResponseFromStatus((500)));
+        return (response.createErrorResponse(500, config.root, config.errorPages));
     } else if (remove(path.c_str()) == -1) {
-        return (response.createResponseFromStatus(500));
+        return (response.createErrorResponse(500, config.root, config.errorPages));
     }
 
     return (response.createResponseFromStatus(204));

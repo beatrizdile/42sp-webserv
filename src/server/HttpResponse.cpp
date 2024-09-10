@@ -74,7 +74,7 @@ std::string HttpResponse::createResponse() {
     return serverResponse.str();
 }
 
-std::string HttpResponse::createResponseFromLocation(int status, const std::string &location) {
+std::string HttpResponse::createResponseFromLocation(size_t status, const std::string &location) {
     httpStatus = status;
     this->location = location;
     this->hasZeroContentLength = true;
@@ -278,15 +278,37 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
     body = indexPage.str();
 }
 
-std::string HttpResponse::createResponseFromStatus(int status) {
+std::string HttpResponse::createResponseFromStatus(size_t status) {
     httpStatus = status;
     std::string responseString = createResponse();
     clear();
     return (responseString);
 }
 
-std::string HttpResponse::createIndexResponse(const std::string &directoryPath, const std::string &uri) {
+std::string HttpResponse::createErrorResponse(size_t status, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages) {
+    httpStatus = status;
+    for (std::vector<std::pair<size_t, std::string> >::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        if (it->first == status) {
+            std::string filePath = root + it->second;
+            std::ifstream file(filePath.c_str());
+            if (file.is_open()) {
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                body = buffer.str();
+            }
+        }
+    }
+
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
+}
+
+std::string HttpResponse::createIndexResponse(const std::string &directoryPath, const std::string &uri, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages) {
     createAutoindex(directoryPath, uri);
+    if (httpStatus >= 400 && httpStatus <= 599) {
+        return (createErrorResponse(httpStatus, root, errorPages));
+    }
     std::string responseString = createResponse();
     clear();
     return (responseString);
@@ -298,14 +320,14 @@ void HttpResponse::generateEtag(const struct stat &fileInfo) {
     etag = etagStream.str();
 }
 
-std::string HttpResponse::createFileResponse(const std::string &filePath, const std::string &etag) {
+std::string HttpResponse::createFileResponse(const std::string &filePath, const std::string &etag, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages) {
     std::ifstream file(filePath.c_str());
     if (!file.is_open()) {
-        httpStatus = 404;
+        return (createErrorResponse(404, root, errorPages));
     } else {
         struct stat fileInfo;
         if (stat(filePath.c_str(), &fileInfo) != 0) {
-            httpStatus = 500;
+            return (createErrorResponse(500, root, errorPages));
         } else {
             lastModified = getFileModificationDate(fileInfo, true);
             generateEtag(fileInfo);
