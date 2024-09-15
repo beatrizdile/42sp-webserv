@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 class HttpResponse {
    private:
@@ -8,13 +9,14 @@ class HttpResponse {
     static const std::string HTTP_VERSION;
     static const std::string DEFAULT_MIME_TYPE;
 
-    int httpStatus;
+    size_t httpStatus;
     std::string contentType;
     std::string body;
     std::string lastModified;
     std::string fileName;
     std::string etag;
     std::string location;
+    bool hasZeroContentLength;
 
     std::string createDate();
     std::string getStatusMessage();
@@ -31,8 +33,9 @@ class HttpResponse {
     ~HttpResponse();
     HttpResponse &operator=(const HttpResponse &assign);
 
-    std::string createResponseFromStatus(int status);
-    std::string createResponseFromLocation(int status, const std::string& location, const std::string& body);
-    std::string createIndexResponse(const std::string& directoryPath, const std::string& uri);
-    std::string createFileResponse(const std::string &filePath, const std::string &etag);
+    std::string createResponseFromStatus(size_t status);
+    std::string createResponseFromLocation(size_t status, const std::string &location);
+    std::string createIndexResponse(const std::string &directoryPath, const std::string &uri, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
+    std::string createFileResponse(const std::string &filePath, const std::string &etag, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
+    std::string createErrorResponse(size_t status, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
 };

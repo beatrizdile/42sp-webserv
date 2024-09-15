@@ -17,6 +17,18 @@ void removeUnecessarySpaces(std::string &fileString) {
     trim(fileString);
 }
 
+std::string createPath(const std::string& root, const std::string& uri) {
+    if (root.empty()) {
+        return (uri);
+    }
+
+    if (root[root.size() - 1] == '/') {
+        return (root.substr(0, root.size() - 1) + uri);
+    }
+
+    return (root + uri);
+}
+
 bool verifySpaceBetweenBlocks(const std::string &fileString, size_t &start, size_t end) {
     while (start < fileString.size() && start < end) {
         if (fileString[start] != ' ' && fileString[start] != '\t') {

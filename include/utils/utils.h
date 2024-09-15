@@ -14,3 +14,4 @@ void trim(std::string &s);
 std::string numberToString(long number);
 std::runtime_error createError(const std::string &error);
 void lowercase(std::string &str);
+std::string createPath(const std::string &root, const std::string &uri);

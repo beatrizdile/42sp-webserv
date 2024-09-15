@@ -46,9 +46,8 @@ class ServerManager {
 
     int removeClient(int clientSocket);
     int matchUriAndResponseClient(int clientSocket);
-    std::string createPath(const std::string& root, const std::string& uri);
-    std::string processRequest(const std::string& root, const std::string& uri, const std::string& index, bool isAutoindex, const std::vector<Method> &methods, size_t clientBodySize);
-    std::string processGetRequest(const std::string &path, const std::string & uri, const std::string &index, bool isAutoindex);
-    std::string processPostRequest(const std::string & path, const std::string & uri);
-    std::string processDeleteRequest(const std::string & path);
+    std::string processRequest(const t_config &config, const std::string &uri, const std::map<std::string, std::string> &headers);
+    std::string processGetRequest(const t_config& config, const std::string &path, const std::string &uri);
+    std::string processPostRequest(const t_config& config, const std::string &path, const std::string &uri, const std::map<std::string, std::string> &headers);
+    std::string processDeleteRequest(const t_config& config, const std::string &path);
 };

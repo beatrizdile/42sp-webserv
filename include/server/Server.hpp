@@ -7,6 +7,7 @@
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
+#include "config.hpp"
 
 class Server {
    public:
@@ -26,6 +27,7 @@ class Server {
     const std::vector<Method> &getMethods() const;
     size_t getClientBodySize() const;
     std::vector<Location>::const_iterator matchUri(std::string uri) const;
+    const t_config getConfig() const;
 
    private:
     Logger logger;

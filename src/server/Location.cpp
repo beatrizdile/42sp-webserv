@@ -42,7 +42,7 @@ const std::string& Location::getPath() const {
     return (path);
 }
 
-const std::string &Location::getRoot() const {
+const std::string& Location::getRoot() const {
     return (root);
 }
 
@@ -50,14 +50,28 @@ bool Location::getAutoindex() const {
     return (autoindex);
 }
 
-const std::string &Location::getIndex() const {
+const std::string& Location::getIndex() const {
     return (index);
 }
 
-const std::vector<Method> &Location::getMethods() const {
+const std::vector<Method>& Location::getMethods() const {
     return (methods);
 }
 
 size_t Location::getClientBodySize() const {
     return (clientBodySize);
 }
+
+const t_config Location::getConfig() const {
+    t_config config = {
+        autoindex,
+        clientBodySize,
+        redirect,
+        root,
+        index,
+        methods,
+        errorPages,
+    };
+    return (config);
+}
+

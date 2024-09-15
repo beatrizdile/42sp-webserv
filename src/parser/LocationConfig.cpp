@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "HttpRequest.hpp"
+
 const size_t LocationConfig::DEFAULT_CLIENT_BODY_SIZE = 1000000;
 const std::string LocationConfig::INDEX_KEY = "index";
 const std::string LocationConfig::ROOT_KEY = "root";
@@ -45,6 +47,10 @@ void LocationConfig::parseLocation(const AstNode& node) {
     }
     path = node.getValues().front().getValue();
 
+    if (path.find_first_not_of(HttpRequest::URI_CHARACTERS) != std::string::npos) {
+        throw std::runtime_error("Location path contains invalid characters at line: " + numberToString(node.getKey().getLine()));
+    }
+
     std::vector<AstNode*> children = node.getChildren();
     if (children.size() == 0) {
         throw std::runtime_error("Location block is empty at line: " + numberToString(node.getKey().getLine()));
@@ -61,6 +67,8 @@ void LocationConfig::parseLocation(const AstNode& node) {
             parseClientBodySize(*(*it));
         } else if (attribute == LocationConfig::ALLOW_METHODS_KEY) {
             parseMethod(*(*it));
+        } else if (attribute == LocationConfig::REDIRECT_KEY) {
+            parseRedirect(*(*it));
         } else if (attribute == LocationConfig::ERROR_PAGE_KEY) {
             parseErrorPage(*(*it));
         } else if (attribute == LocationConfig::AUTOINDEX_KEY) {
@@ -105,6 +113,10 @@ void LocationConfig::parseRedirect(const AstNode& node) {
     }
 
     redirect = node.getValues().front().getValue();
+
+    if (redirect.find_first_not_of(HttpRequest::URI_CHARACTERS) != std::string::npos) {
+        throw std::runtime_error("Redirect attribute contains invalid characters at line: " + numberToString(node.getKey().getLine()));
+    }
 }
 
 void LocationConfig::parseClientBodySize(const AstNode& node) {
@@ -162,7 +174,7 @@ void LocationConfig::parseErrorPage(const AstNode& node) {
 
     char* end;
     long code = std::strtol(elems[0].getValue().c_str(), &end, 10);
-    if (*end != '\0' || code < 100 || code > 599) {
+    if (*end != '\0' || code < 400 || code > 599) {
         throw std::runtime_error("Error page code must be a number in valid range at line: " + numberToString(elems[0].getLine()));
     }
 

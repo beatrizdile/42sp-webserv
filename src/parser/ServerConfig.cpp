@@ -214,7 +214,7 @@ void ServerConfig::parseErrorPage(const AstNode& node) {
 
     char* end;
     long code = std::strtol(elems[0].getValue().c_str(), &end, 10);
-    if (*end != '\0' || code < 100 || code > 599) {
+    if (*end != '\0' || code < 400 || code > 599) {
         throw std::runtime_error("Error page code must be a number in valid range at line: " + numberToString(elems[0].getLine()));
     }
 

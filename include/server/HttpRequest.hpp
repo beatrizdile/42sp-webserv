@@ -9,6 +9,8 @@
 class HttpRequest {
    public:
     static const std::string HEADER_HOST_KEY;
+    static const std::string URI_CHARACTERS;
+    static const std::string HEADER_CONTENT_TYPE_KEY;
 
     HttpRequest();
     HttpRequest(const HttpRequest &copy);
@@ -38,7 +40,6 @@ class HttpRequest {
     size_t contentLength;
     bool complete;
 
-    static const std::string URI_CHARACTERS;
     static const std::string HEADER_VALUE_CHARACTERS;
     static const std::string HEADER_KEY_CHARACTERS;
     static const std::string CONTENT_LENTH;
