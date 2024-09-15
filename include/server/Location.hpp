@@ -34,4 +34,5 @@ class Location {
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
+    std::map<std::string, std::string> cgiPaths;
 };

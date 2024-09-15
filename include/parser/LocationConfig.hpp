@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "AstNode.hpp"
 #include "Logger.hpp"
@@ -19,6 +20,7 @@ class LocationConfig {
     static const std::string ALLOW_METHODS_KEY;
     static const std::string ERROR_PAGE_KEY;
     static const std::string AUTOINDEX_KEY;
+    static const std::string CGI_PATH_KEY;
 
     LocationConfig();
     LocationConfig(const LocationConfig& other);
@@ -31,6 +33,7 @@ class LocationConfig {
     const std::string& getRoot() const;
     const std::string& getIndex() const;
     const std::string& getRedirect() const;
+    const std::map<std::string, std::string>& getCgiPaths() const;
     size_t getClientBodySize() const;
     const std::vector<Method>& getMethods() const;
     const std::vector<std::pair<size_t, std::string> >& getErrorPages() const;
@@ -47,6 +50,7 @@ class LocationConfig {
     std::vector<Method> methods;
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
+    std::map<std::string, std::string> cgiPaths;
 
     void parseRoot(const AstNode& node);
     void parseIndex(const AstNode& node);
@@ -55,4 +59,5 @@ class LocationConfig {
     void parseMethod(const AstNode& node);
     void parseErrorPage(const AstNode& node);
     void parseAutoindex(const AstNode& node);
+    void parseCgiPath(const AstNode& node);
 };

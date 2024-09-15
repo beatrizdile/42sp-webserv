@@ -117,6 +117,7 @@ const t_config Server::getConfig() const {
         index,
         methods,
         errorPages,
+        std::map<std::string, std::string>()
     };
     return (config);
 }

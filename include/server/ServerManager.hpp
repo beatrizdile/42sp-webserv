@@ -50,4 +50,5 @@ class ServerManager {
     std::string processGetRequest(const t_config& config, const std::string &path, const std::string &uri);
     std::string processPostRequest(const t_config& config, const std::string &path, const std::string &uri, const std::map<std::string, std::string> &headers);
     std::string processDeleteRequest(const t_config& config, const std::string &path);
+    std::string processCgi(const t_config& config, std::string path, const std::string& uri, const std::map<std::string, std::string>& headers);
 };

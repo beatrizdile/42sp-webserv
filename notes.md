@@ -2,6 +2,7 @@ Mandatorio:
 - [x] setar pagina de erro de acordo com nginx
 - [x] Redirect
 - [] CGI
+- [] Root do server deve ser o padrão dos locations
 
 Tests:
 - [x] Testar enviar uma requisição errada, não deve crashar

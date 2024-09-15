@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include <algorithm>
 #include <cstring>
@@ -184,12 +186,6 @@ int ServerManager::matchUriAndResponseClient(int clientSocket) {
 }
 
 std::string ServerManager::processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers) {
-    if (config.redirect != "") {
-        return (response.createResponseFromLocation(301, config.redirect));
-    }
-
-    std::string path = createPath(config.root, uri);
-
     if (std::find(config.methods.begin(), config.methods.end(), request.getMethod()) == config.methods.end()) {
         return (response.createErrorResponse(405, config.root, config.errorPages));
     }
@@ -198,7 +194,14 @@ std::string ServerManager::processRequest(const t_config& config, const std::str
         return (response.createErrorResponse(413, config.root, config.errorPages));
     }
 
-    if (request.getMethod() == GET) {
+    if (config.redirect != "") {
+        return (response.createResponseFromLocation(301, config.redirect));
+    }
+
+    std::string path = createPath(config.root, uri);
+    if (config.cgiPaths.size() != 0) {
+        return (processCgi(config, path, uri, headers));
+    } else if (request.getMethod() == GET) {
         return (processGetRequest(config, path, uri));
     } else if (request.getMethod() == POST) {
         return (processPostRequest(config, path, uri, headers));
@@ -290,6 +293,87 @@ std::string ServerManager::processDeleteRequest(const t_config& config, const st
     }
 
     return (response.createResponseFromStatus(204));
+}
+
+std::string ServerManager::processCgi(const t_config& config, std::string path, const std::string& uri, const std::map<std::string, std::string>& headers) {
+    size_t dotPosition = path.find_last_of('.');
+    if (dotPosition == std::string::npos) {
+        return (response.createErrorResponse(404, config.root, config.errorPages));
+    }
+
+    std::string extension = path.substr(dotPosition + 1);
+    std::map<std::string, std::string>::const_iterator it = config.cgiPaths.find(extension);
+    if (it == config.cgiPaths.end()) {
+        return (response.createErrorResponse(404, config.root, config.errorPages));
+    }
+
+    if (access(path.c_str(), F_OK) == -1) {
+        return (response.createErrorResponse(404, config.root, config.errorPages));
+    }
+
+    int pipeOut[2];
+    int pipeErr[2];
+
+    if (pipe(pipeOut) == -1 || pipe(pipeErr) == -1) {
+        return (response.createErrorResponse(500, config.root, config.errorPages));
+    }
+
+    int pid = fork();
+
+    if (pid == -1) {
+        return (response.createErrorResponse(500, config.root, config.errorPages));
+    }
+    
+    if (pid == 0) {
+        close(pipeOut[0]);
+        close(pipeErr[0]);
+
+        dup2(pipeOut[1], STDOUT_FILENO);
+        dup2(pipeErr[1], STDERR_FILENO);
+
+   
+        std::vector<char*> envp;
+        std::string cgiPath = it->second;
+        envp.push_back(const_cast<char*>(("SCRIPT_NAME=" + uri).c_str()));
+        envp.push_back(const_cast<char*>(("SCRIPT_FILENAME=" + path).c_str()));
+        envp.push_back(const_cast<char*>(("REQUEST_METHOD=" + getMethodString(request.getMethod())).c_str()));
+        envp.push_back(const_cast<char*>(("CONTENT_LENGTH=" + numberToString(request.getBody().size())).c_str()));
+        envp.push_back(const_cast<char*>(("HTTP_HOST=" + headers.at(HttpRequest::HEADER_HOST_KEY)).c_str()));
+        envp.push_back(const_cast<char*>(("SERVER_PROTOCOL=" + request.getVersion()).c_str()));
+        envp.push_back(const_cast<char*>(("SERVER_PORT=" + numberToString(port)).c_str()));
+        envp.push_back(const_cast<char*>("REDIRECT_STATUS=200"));
+        envp.push_back(const_cast<char*>("SERVER_SOFTWARE=webserv"));
+        envp.push_back(const_cast<char*>("GATEWAY_INTERFACE=CGI/1.1"));
+        envp.push_back(NULL);
+
+        char* argv[] = {const_cast<char*>(cgiPath.c_str()), const_cast<char*>(path.c_str()), NULL};
+        execve(cgiPath.c_str(), argv, envp.data());
+        exit(1);
+    } else {
+        close(pipeOut[1]);
+        close(pipeErr[1]);
+
+        waitpid(pid, NULL, 0);
+
+        char buffer[READ_BUFFER_SIZE];
+        std::string output;
+        ssize_t bytesRead = 0;
+        while ((bytesRead = read(pipeOut[0], buffer, READ_BUFFER_SIZE)) > 0) {
+            output.append(buffer, bytesRead);
+        }
+
+        std::string error;
+
+        while ((bytesRead = read(pipeErr[0], buffer, READ_BUFFER_SIZE)) > 0) {
+            error.append(buffer, bytesRead);
+        }
+
+        close(pipeOut[0]);
+        close(pipeErr[0]);
+        logger.info() << "CGI output: " << output << std::endl;
+        logger.info() << "CGI error: " << error << std::endl;
+        return (response.createResponseFromStatus(200));
+    }
 }
 
 int ServerManager::removeClient(int clientSocket) {

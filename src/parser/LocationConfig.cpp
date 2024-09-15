@@ -13,8 +13,9 @@ const std::string LocationConfig::ALLOW_METHODS_KEY = "allow_methods";
 const std::string LocationConfig::ERROR_PAGE_KEY = "error_page";
 const std::string LocationConfig::AUTOINDEX_KEY = "autoindex";
 const std::string LocationConfig::DEFAULT_INDEX = "index.html";
+const std::string LocationConfig::CGI_PATH_KEY = "cgi_path";
 
-LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(DEFAULT_INDEX), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+LocationConfig::LocationConfig() : logger(Logger("LOCATION_CONFIG")), path(""), root(""), index(DEFAULT_INDEX), redirect(""), clientBodySize(DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), cgiPaths() {}
 
 LocationConfig::LocationConfig(const LocationConfig& other) {
     *this = other;
@@ -31,6 +32,7 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
         methods = other.methods;
         errorPages = other.errorPages;
         autoindex = other.autoindex;
+        cgiPaths = other.cgiPaths;
     }
     return (*this);
 }
@@ -73,6 +75,8 @@ void LocationConfig::parseLocation(const AstNode& node) {
             parseErrorPage(*(*it));
         } else if (attribute == LocationConfig::AUTOINDEX_KEY) {
             parseAutoindex(*(*it));
+        } else if (attribute == LocationConfig::CGI_PATH_KEY) {
+            parseCgiPath(*(*it));
         } else {
             throw std::runtime_error("Unknown attribute '" + attribute + "' in server block at line: " + numberToString(node.getKey().getLine()));
         }
@@ -200,6 +204,32 @@ void LocationConfig::parseAutoindex(const AstNode& node) {
     }
 }
 
+void LocationConfig::parseCgiPath(const AstNode& node) {
+    if (!node.getIsLeaf()) {
+        throw std::runtime_error("Cgi path attribute can't have children at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::vector<Token> elems = node.getValues();
+
+    if (elems.size() == 0) {
+        throw std::runtime_error("Cgi path attribute expected at least one value at line: " + numberToString(node.getKey().getLine()));
+    }
+
+    std::vector<std::string> paths;
+    for (std::vector<Token>::iterator it = elems.begin(); it != elems.end(); ++it) {
+        std::string key = (*it).getValue();
+        split(key, ':', paths);
+
+
+        if (paths.size() != 2) {
+            throw std::runtime_error("Cgi path attribute must have two values at line: " + numberToString(node.getKey().getLine()));
+        }
+
+        cgiPaths[paths[0]] = paths[1];
+        paths.clear();
+    }
+}
+
 const std::string& LocationConfig::getPath() const {
     return (path);
 }
@@ -230,4 +260,8 @@ const std::vector<std::pair<size_t, std::string> >& LocationConfig::getErrorPage
 
 bool LocationConfig::getAutoindex() const {
     return (autoindex);
+}
+
+const std::map<std::string, std::string>& LocationConfig::getCgiPaths() const {
+    return (cgiPaths);
 }

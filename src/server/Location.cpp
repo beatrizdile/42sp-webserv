@@ -1,6 +1,6 @@
 #include "Location.hpp"
 
-Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), cgiPaths() {}
 
 Location::Location(const LocationConfig& locationConfig) {
     logger = Logger("LOCATION");
@@ -15,6 +15,7 @@ Location::Location(const LocationConfig& locationConfig) {
     }
     errorPages = locationConfig.getErrorPages();
     autoindex = locationConfig.getAutoindex();
+    cgiPaths = locationConfig.getCgiPaths();
 }
 
 Location::Location(const Location& other) {
@@ -32,6 +33,7 @@ Location& Location::operator=(const Location& other) {
         methods = other.methods;
         errorPages = other.errorPages;
         autoindex = other.autoindex;
+        cgiPaths = other.cgiPaths;
     }
     return (*this);
 }
@@ -71,6 +73,7 @@ const t_config Location::getConfig() const {
         index,
         methods,
         errorPages,
+        cgiPaths
     };
     return (config);
 }
