@@ -10,7 +10,7 @@
 class Location {
    public:
     Location();
-    Location(const LocationConfig &locationConfig);
+    Location(const LocationConfig& locationConfig, const std::string& serverRoot);
     Location(const Location &other);
     Location &operator=(const Location &other);
     ~Location();

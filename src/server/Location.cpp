@@ -2,10 +2,13 @@
 
 Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), cgiPaths() {}
 
-Location::Location(const LocationConfig& locationConfig) {
+Location::Location(const LocationConfig& locationConfig, const std::string& serverRoot) {
     logger = Logger("LOCATION");
     path = locationConfig.getPath();
     root = locationConfig.getRoot();
+    if (root.empty()) {
+        root = serverRoot;
+    }
     index = locationConfig.getIndex();
     redirect = locationConfig.getRedirect();
     clientBodySize = locationConfig.getClientBodySize();

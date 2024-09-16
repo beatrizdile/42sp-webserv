@@ -2,9 +2,9 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cstring>
@@ -323,7 +323,7 @@ std::string ServerManager::processCgi(const t_config& config, std::string path, 
     if (pid == -1) {
         return (response.createErrorResponse(500, config.root, config.errorPages));
     }
-    
+
     if (pid == 0) {
         close(pipeOut[0]);
         close(pipeErr[0]);
@@ -331,7 +331,6 @@ std::string ServerManager::processCgi(const t_config& config, std::string path, 
         dup2(pipeOut[1], STDOUT_FILENO);
         dup2(pipeErr[1], STDERR_FILENO);
 
-   
         std::vector<char*> envp;
         std::string cgiPath = it->second;
         envp.push_back(const_cast<char*>(("SCRIPT_NAME=" + uri).c_str()));

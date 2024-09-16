@@ -75,7 +75,22 @@ void ServerConfig::parseServer(const AstNode& node) {
         }
     }
 
+    validMinimumConfig();
     verifyDuplicatedLocations();
+}
+
+void ServerConfig::validMinimumConfig() const {
+    if (port == -1) {
+        throw std::runtime_error("Port attribute is required in server block");
+    }
+
+    if (name.empty()) {
+        throw std::runtime_error("Server name attribute is required in server block");
+    }
+
+    if (root.empty()) {
+        throw std::runtime_error("Root attribute is required in server block");
+    }
 }
 
 void ServerConfig::verifyDuplicatedLocations() const {

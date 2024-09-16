@@ -24,7 +24,7 @@ Server::Server(const ServerConfig &serverConfig) {
 
     std::vector<LocationConfig> locationsConfig = serverConfig.getLocations();
     for (std::vector<LocationConfig>::iterator it = locationsConfig.begin(); it != locationsConfig.end(); ++it) {
-        locations.push_back(Location(*it));
+        locations.push_back(Location(*it, serverConfig.getRoot()));
     }
 }
 

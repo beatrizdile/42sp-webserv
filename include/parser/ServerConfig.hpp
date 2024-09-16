@@ -48,6 +48,7 @@ class ServerConfig {
     bool autoindex;
 
     void verifyDuplicatedLocations() const;
+    void validMinimumConfig() const;
 
     void parseListen(const AstNode& node);
     void parseName(const AstNode& node);
