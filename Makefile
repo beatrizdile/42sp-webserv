@@ -27,6 +27,7 @@ SRCS	= model/Method.cpp \
 				server/HttpRequest.cpp \
 				server/Location.cpp \
 				server/Server.cpp \
+				server/Client.cpp \
 				server/ServerManager.cpp \
 				server/HttpResponse.cpp \
 				server/WebServer.cpp \

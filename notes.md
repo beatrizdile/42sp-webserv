@@ -1,13 +1,10 @@
 Mandatorio:
-- [x] setar pagina de erro de acordo com nginx
-- [x] Redirect
 - [] CGI
-- [] Root do server deve ser o padrão dos locations
+- [] Colocar FDs dos pipes de CGI no poll
+- [] URL sem barra deve retornar redirecionar para a pastar com barra no final
 
 Tests:
-- [x] Testar enviar uma requisição errada, não deve crashar
-- [x] Testar upload de arquivos grandes
-- [x] Verificar memory leak com valgrid
+- [] Testar mandatorio com codigo novo
 
 Extra:
 - [] se mantém a conexão keep alive (opcional)
