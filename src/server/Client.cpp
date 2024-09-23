@@ -150,7 +150,7 @@ std::string Client::processGetRequest(const t_config& config, const std::string&
 
     if (S_ISDIR(fileStat.st_mode)) {
         if (path[path.size() - 1] != '/') {
-            return (response.createResponseFromStatus(301));
+            return (response.createResponseFromLocation(301, uri + "/"));
         } else if (access((path + "/" + config.index).c_str(), F_OK) != -1) {
             return (response.createFileResponse(path + "/" + config.index, etag, config.root, config.errorPages));
         } else if (config.isAutoindex) {
