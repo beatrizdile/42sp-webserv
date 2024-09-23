@@ -76,8 +76,6 @@ const t_config Location::getConfig() const {
         index,
         methods,
         errorPages,
-        cgiPaths
-    };
+        cgiPaths};
     return (config);
 }
-

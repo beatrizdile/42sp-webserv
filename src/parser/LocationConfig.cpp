@@ -220,7 +220,6 @@ void LocationConfig::parseCgiPath(const AstNode& node) {
         std::string key = (*it).getValue();
         split(key, ':', paths);
 
-
         if (paths.size() != 2) {
             throw std::runtime_error("Cgi path attribute must have two values at line: " + numberToString(node.getKey().getLine()));
         }

@@ -18,23 +18,23 @@ Client::Client(int fd) : fd(fd), logger(Logger("CLIENT")) {}
 
 Client::~Client() {}
 
-Client::Client(const Client &other) {
-	*this = other;
+Client::Client(const Client& other) {
+    *this = other;
 }
 
-Client &Client::operator=(const Client &other) {
-	if (this != &other) {
-		this->fd = other.fd;
-		this->request = other.request;
-		this->response = other.response;
-		this->responseStr = other.responseStr;
-		this->logger = other.logger;
-	}
-	return *this;
+Client& Client::operator=(const Client& other) {
+    if (this != &other) {
+        this->fd = other.fd;
+        this->request = other.request;
+        this->response = other.response;
+        this->responseStr = other.responseStr;
+        this->logger = other.logger;
+    }
+    return *this;
 }
 
-int Client::getFd() const{
-	return this->fd;
+int Client::getFd() const {
+    return this->fd;
 }
 
 int Client::processSendedData(const std::vector<Server>& servers) {
@@ -70,9 +70,9 @@ int Client::sendResponse() {
     }
 
     ssize_t bytesToSend = std::min(responseStr.size(), BUFFER_SIZE);
-	std::string buffer = responseStr.substr(0, bytesToSend);
+    std::string buffer = responseStr.substr(0, bytesToSend);
 
-	ssize_t bytesSend = send(fd, buffer.c_str(), buffer.size(), 0);
+    ssize_t bytesSend = send(fd, buffer.c_str(), buffer.size(), 0);
     if (bytesSend == -1) {
         logger.perror("send");
         return (fd);

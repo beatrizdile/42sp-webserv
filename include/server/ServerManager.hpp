@@ -3,13 +3,13 @@
 #include <string>
 #include <vector>
 
+#include "Client.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "Server.hpp"
 #include "ServerConfig.hpp"
-#include "Client.hpp"
 
 class ServerManager {
    public:
@@ -46,5 +46,5 @@ class ServerManager {
     HttpResponse response;
 
     int removeClient(int clientSocket);
-    Client& getClient(int clientSocket);
+    Client &getClient(int clientSocket);
 };

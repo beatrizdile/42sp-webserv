@@ -7,7 +7,7 @@
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
-#include "config.hpp"
+#include "config.h"
 
 class Server {
    public:

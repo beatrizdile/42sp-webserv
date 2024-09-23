@@ -5,12 +5,12 @@
 
 #include "LocationConfig.hpp"
 #include "Logger.hpp"
-#include "config.hpp"
+#include "config.h"
 
 class Location {
    public:
     Location();
-    Location(const LocationConfig& locationConfig, const std::string& serverRoot);
+    Location(const LocationConfig &locationConfig, const std::string &serverRoot);
     Location(const Location &other);
     Location &operator=(const Location &other);
     ~Location();

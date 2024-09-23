@@ -17,7 +17,7 @@ void removeUnecessarySpaces(std::string &fileString) {
     trim(fileString);
 }
 
-std::string createPath(const std::string& root, const std::string& uri) {
+std::string createPath(const std::string &root, const std::string &uri) {
     if (root.empty()) {
         return (uri);
     }
