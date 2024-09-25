@@ -241,7 +241,7 @@ fclean:		header clean
 re:			fclean all
 
 val:
-			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/complete.conf
+			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/paulo.conf
 
 reval: fclean all val
 

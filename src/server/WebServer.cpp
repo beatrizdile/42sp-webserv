@@ -69,7 +69,7 @@ void WebServer::setupServers() {
 
 void WebServer::runServers() {
     std::vector<int> fdsToRemove;
-    std::vector<int> fdsToAdd;
+    std::vector<pollfd> fdsToAdd;
 
     while (true) {
         int affected = 0;
@@ -94,10 +94,14 @@ void WebServer::runServers() {
                         logger.perror("accept");
                         continue;
                     }
-                    fdsToAdd.push_back(clientFd);
+                    struct pollfd pfd;
+                    pfd.fd = clientFd;
+                    pfd.events = POLLIN | POLLOUT | POLLNVAL | POLLHUP | POLLERR;
+                    pfd.revents = 0;
+                    fdsToAdd.push_back(pfd);
                 } else {
                     std::vector<ServerManager>::iterator it = findServerClientFd((*fd).fd);
-                    if ((*it).processClientRequest((*fd).fd) != 0) {
+                    if ((*it).processClientRequest((*fd).fd, fdsToAdd) != 0) {
                         fdsToRemove.push_back((*fd).fd);
                     }
                 }
@@ -125,8 +129,8 @@ void WebServer::runServers() {
         }
         fdsToRemove.clear();
 
-        for (std::vector<int>::iterator it = fdsToAdd.begin(); it != fdsToAdd.end(); ++it) {
-            addNewClient(*it);
+        for (std::vector<pollfd>::iterator it = fdsToAdd.begin(); it != fdsToAdd.end(); ++it) {
+            fds.push_back(*it);
         }
         fdsToAdd.clear();
     }
@@ -184,12 +188,4 @@ void WebServer::removeClient(int clientfd) {
             break;
         }
     }
-}
-
-void WebServer::addNewClient(int clientFd) {
-    pollfd clientPollfd;
-    clientPollfd.fd = clientFd;
-    clientPollfd.events = POLLIN | POLLOUT | POLLNVAL | POLLHUP | POLLERR;
-    clientPollfd.revents = 0;
-    fds.push_back(clientPollfd);
 }

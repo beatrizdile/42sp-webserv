@@ -29,7 +29,7 @@ class ServerManager {
     int getPort() const;
     in_addr_t getHost() const;
     int getFd() const;
-    int processClientRequest(int clientSocket);
+    int processClientRequest(int clientSocket, std::vector<pollfd> &fdsToAdd);
     int sendClientResponse(int clientSocket);
     bool isClient(int clientSocket) const;
 

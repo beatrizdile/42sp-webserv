@@ -1,6 +1,7 @@
 #include "ServerManager.hpp"
 
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -9,8 +10,10 @@
 #include <algorithm>
 #include <cstring>
 #include <fstream>
+#include <string>
 
 const size_t ServerManager::MAX_CLIENTS = 1000;
+const size_t ServerManager::BUFFER_SIZE = 1024;
 
 ServerManager::ServerManager() : logger(Logger("SERVER_MANAGER")), socketFd(0), port(-1), host(INADDR_ANY), servers(std::vector<Server>()), clients(std::vector<Client>()), request(HttpRequest()), response(HttpResponse()) {}
 
@@ -98,6 +101,10 @@ int ServerManager::acceptConnection() {
     struct sockaddr_in clientAddress;
     socklen_t clientAddressLen = sizeof(clientAddress);
     int clientFd = accept(socketFd, (struct sockaddr*)&clientAddress, &clientAddressLen);
+    if (clientFd == -1) {
+        logger.perror("accept");
+        return (-1);
+    }
 
     int flags = fcntl(clientFd, F_GETFL, 0);
     if (flags == -1) {
@@ -116,20 +123,20 @@ int ServerManager::acceptConnection() {
     return (clientFd);
 }
 
-int ServerManager::processClientRequest(int clientSocket) {
+int ServerManager::processClientRequest(int clientSocket, std::vector<pollfd>& fdsToAdd) {
     Client& client = getClient(clientSocket);
-    int fd = client.processSendedData(servers);
+    int fd = client.processSendedData(clientSocket, servers, fdsToAdd);
     if (fd != 0) {
-        return (removeClient(fd));
+        return (fd == client.getFd() ? removeClient(fd) : fd);
     }
     return (0);
 }
 
 int ServerManager::sendClientResponse(int clientSocket) {
     Client& client = getClient(clientSocket);
-    int fd = client.sendResponse();
+    int fd = client.sendResponse(clientSocket);
     if (fd != 0) {
-        return (removeClient(fd));
+        return (fd == client.getFd() ? removeClient(fd) : fd);
     }
     return (0);
 }
@@ -137,6 +144,7 @@ int ServerManager::sendClientResponse(int clientSocket) {
 int ServerManager::removeClient(int clientSocket) {
     for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
         if ((*it).getFd() == clientSocket) {
+            it->closeAll();
             clients.erase(it);
             break;
         }
@@ -146,7 +154,7 @@ int ServerManager::removeClient(int clientSocket) {
 
 Client& ServerManager::getClient(int clientSocket) {
     for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
-        if ((*it).getFd() == clientSocket) {
+        if ((*it).isFdValid(clientSocket)) {
             return (*it);
         }
     }
@@ -155,7 +163,7 @@ Client& ServerManager::getClient(int clientSocket) {
 
 bool ServerManager::isClient(int clientSocket) const {
     for (std::vector<Client>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
-        if (it->getFd() == clientSocket) {
+        if (it->isFdValid(clientSocket)) {
             return (true);
         }
     }

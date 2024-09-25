@@ -28,7 +28,6 @@ class WebServer {
 
     static void verifyDuplicatedServers(std::vector<ServerConfig> serversConfig);
     std::vector<ServerManager>::iterator findServerFd(int fd);
-    void addNewClient(int serverFd);
     void removeClient(int clientfd);
     std::vector<ServerManager>::iterator findServerClientFd(int clientFd);
 };

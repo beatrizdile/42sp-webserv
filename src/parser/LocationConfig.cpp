@@ -224,7 +224,11 @@ void LocationConfig::parseCgiPath(const AstNode& node) {
             throw std::runtime_error("Cgi path attribute must have two values at line: " + numberToString(node.getKey().getLine()));
         }
 
-        cgiPaths[paths[0]] = paths[1];
+        if (paths[1].find('.') != std::string::npos) {
+            throw std::runtime_error("Cgi path extension must not have a dot at line: " + numberToString(node.getKey().getLine()));
+        }
+
+        cgiPaths[paths[1]] = paths[0];
         paths.clear();
     }
 }

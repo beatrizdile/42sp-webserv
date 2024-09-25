@@ -1,5 +1,7 @@
 #pragma once
 
+#include <poll.h>
+
 #include <string>
 
 #include "HttpRequest.hpp"
@@ -18,20 +20,24 @@ class Client {
     Client& operator=(const Client& other);
 
     int getFd() const;
-    int processSendedData(const std::vector<Server>& servers);
-    int sendResponse();
+    bool isFdValid(int fd) const;
+    int processSendedData(int fdAffected, const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd);
+    int sendResponse(int clientSocket);
+    void closeAll() const;
 
    private:
     int fd;
-    int pipeIn[2];
-    int pipeOut[2];
+    int pipeIn;
+    int pipeOut;
     HttpRequest request;
     HttpResponse response;
     std::string responseStr;
     Logger logger;
 
-    void matchUriAndResponseClient(const std::vector<Server>& servers);
-    std::string processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers);
+    int readCgiResponse(const std::string& bytesReded);
+    std::string createCgiProcess(const t_config& config, std::string& execPath, std::string& scriptPath, std::vector<pollfd>& fdsToAdd);
+    void matchUriAndResponseClient(const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd);
+    std::string processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers, std::vector<pollfd>& fdsToAdd);
     std::string processGetRequest(const t_config& config, const std::string& path, const std::string& uri);
     std::string processPostRequest(const t_config& config, const std::string& path, const std::string& uri, const std::map<std::string, std::string>& headers);
     std::string processDeleteRequest(const t_config& config, const std::string& path);

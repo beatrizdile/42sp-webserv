@@ -143,14 +143,14 @@ void HttpRequest::parseHeaders(size_t endPos) {
         }
 
         std::string key = line.substr(0, pos);
-        if (key.find_first_not_of(HEADER_KEY_CHARACTERS) != std::string::npos) {
+        if (verifyHeaderKey(key)) {
             throw std::runtime_error("Invalid header key '" + key + "'");
         }
         lowercase(key);
 
         std::string value = line.substr(pos + 1);
         trim(value);
-        if (value.find_first_not_of(HEADER_VALUE_CHARACTERS) != std::string::npos) {
+        if (verifyHeaderValue(value)) {
             throw std::runtime_error("Invalid header value '" + value + "'");
         }
 
@@ -166,6 +166,14 @@ void HttpRequest::parseHeaders(size_t endPos) {
         }
         contentLength = size;
     }
+}
+
+bool HttpRequest::verifyHeaderKey(const std::string &key) {
+    return (key.find_first_not_of(HEADER_KEY_CHARACTERS) != std::string::npos);
+}
+
+bool HttpRequest::verifyHeaderValue(const std::string &value) {
+    return (value.find_first_not_of(HEADER_VALUE_CHARACTERS) != std::string::npos);
 }
 
 Method HttpRequest::getMethod() const {
@@ -186,6 +194,10 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 
 const std::string &HttpRequest::getBody() const {
     return (body);
+}
+
+void HttpRequest::eraseBody(size_t erase) {
+    body.erase(0, erase);
 }
 
 bool HttpRequest::isComplete() const {

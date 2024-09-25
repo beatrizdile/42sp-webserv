@@ -12,9 +12,9 @@
 
 const size_t Client::BUFFER_SIZE = 1024;
 
-Client::Client() {}
+Client::Client() : fd(0), pipeIn(0), pipeOut(0), logger(Logger("Client")) {}
 
-Client::Client(int fd) : fd(fd), logger(Logger("CLIENT")) {}
+Client::Client(int fd) : fd(fd), pipeIn(0), pipeOut(0), logger(Logger("Client")) {}
 
 Client::~Client() {}
 
@@ -25,6 +25,8 @@ Client::Client(const Client& other) {
 Client& Client::operator=(const Client& other) {
     if (this != &other) {
         this->fd = other.fd;
+        this->pipeIn = other.pipeIn;
+        this->pipeOut = other.pipeOut;
         this->request = other.request;
         this->response = other.response;
         this->responseStr = other.responseStr;
@@ -37,19 +39,127 @@ int Client::getFd() const {
     return this->fd;
 }
 
-int Client::processSendedData(const std::vector<Server>& servers) {
+bool Client::isFdValid(int fd) const {
+    return (fd == this->fd || fd == pipeIn || fd == pipeOut);
+}
+
+std::string Client::createCgiProcess(const t_config& config, std::string& execPath, std::string& scriptPath, std::vector<pollfd>& fdsToAdd) {
+    if (access(scriptPath.c_str(), F_OK) == -1) {
+        return (response.createErrorResponse(404, config.root, config.errorPages));
+    }
+
+    int pipeInput[2], pipeOutput[2];
+    pipeInput[0] = pipeInput[1] = -1;
+
+    if (pipe(pipeOutput) == -1) {
+        return (response.createErrorResponse(500, config.root, config.errorPages));
+    }
+    if (!request.getBody().empty() && pipe(pipeInput) == -1) {
+        close(pipeOutput[0]);
+        close(pipeOutput[1]);
+        return (response.createErrorResponse(500, config.root, config.errorPages));
+    }
+
+    int pid = fork();
+    if (pid == -1) {
+        close(pipeOutput[0]);
+        close(pipeOutput[1]);
+        if (pipeInput[0] != -1) {
+            close(pipeInput[0]);
+            close(pipeInput[1]);
+        }
+        return (response.createErrorResponse(500, config.root, config.errorPages));
+    }
+
+    if (pid == 0) {
+        if (pipeInput[0] != -1) {
+            close(pipeInput[1]);
+            dup2(pipeInput[0], STDIN_FILENO);
+            close(pipeInput[0]);
+        }
+
+        close(pipeOutput[0]);
+        dup2(pipeOutput[1], STDOUT_FILENO);
+        close(pipeOutput[1]);
+
+        std::string dir = scriptPath.substr(0, scriptPath.find_last_of('/'));
+        if (chdir(dir.c_str()) == -1) {
+            exit(1);
+        }
+
+        setenv("REQUEST_METHOD", getMethodString(request.getMethod()).c_str(), 1);
+        setenv("REQUEST_URI", request.getUri().c_str(), 1);
+        setenv("SERVER_PROTOCOL", request.getVersion().c_str(), 1);
+        setenv("SERVER_SOFTWARE", "webserv", 1);
+        setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
+        setenv("CONTENT_LENGTH", numberToString(request.getBody().size()).c_str(), 1);
+        setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+
+        for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
+            setenv(("HTTP_" + it->first).c_str(), it->second.c_str(), 1);
+        }
+
+        char* argv[] = {(char*)execPath.c_str(), (char*)scriptPath.c_str(), NULL};
+        execv(execPath.c_str(), argv);
+
+        exit(1);
+    } else {
+        if (pipeInput[0] != -1) {
+            close(pipeInput[0]);
+            pipeIn = pipeInput[1];
+
+            struct pollfd pfdIn;
+            pfdIn.fd = pipeIn;
+            pfdIn.events = POLLOUT;
+            pfdIn.revents = 0;
+            fdsToAdd.push_back(pfdIn);
+        }
+
+        close(pipeOutput[1]);
+        pipeOut = pipeOutput[0];
+
+        struct pollfd pfdOut;
+        pfdOut.fd = pipeOut;
+        pfdOut.events = POLLIN;
+        pfdOut.revents = 0;
+        fdsToAdd.push_back(pfdOut);
+
+        return ("");
+    }
+}
+
+void Client::closeAll() const {
+    if (pipeIn != 0) {
+        close(pipeIn);
+    }
+    if (pipeOut != 0) {
+        close(pipeOut);
+    }
+}
+
+int Client::processSendedData(int fdAffected, const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd) {
     char buffer[BUFFER_SIZE];
     ssize_t bytesRead = 0;
 
-    bytesRead = recv(fd, buffer, BUFFER_SIZE, 0);
+    bytesRead = read(fdAffected, buffer, BUFFER_SIZE);
     if (bytesRead == -1) {
-        logger.perror("recv");
-        return (fd);
+        logger.perror("read");
+        if (fdAffected != fd) {
+            pipeOut = 0;
+        }
+        return (fdAffected);
     }
 
     if (bytesRead == 0) {
-        logger.info() << "Client disconnected on fd " << fd << std::endl;
-        return (fd);
+        logger.info() << "Client disconnected on fd " << fdAffected << std::endl;
+        if (fdAffected != fd) {
+            pipeOut = 0;
+        }
+        return (fdAffected);
+    }
+
+    if (fdAffected != fd) {
+        return (readCgiResponse(std::string(buffer, bytesRead)));
     }
 
     if (!request.digestRequest(std::string(buffer, bytesRead))) {
@@ -58,31 +168,51 @@ int Client::processSendedData(const std::vector<Server>& servers) {
     }
 
     if (request.isComplete()) {
-        matchUriAndResponseClient(servers);
+        matchUriAndResponseClient(servers, fdsToAdd);
     }
 
     return (0);
 }
 
-int Client::sendResponse() {
-    if (responseStr.size() == 0) {
+int Client::readCgiResponse(const std::string& bytesReded) {
+    logger.info() << "Cgi response: " << bytesReded << std::endl;
+    responseStr = response.createResponseFromStatus(204);
+    return (0);
+}
+
+int Client::sendResponse(int clientSocket) {
+    if (clientSocket == fd && responseStr.size() == 0) {
         return (0);
+    } else if (clientSocket != fd && request.getBody().size() == 0) {
+        pipeIn = 0;
+        return (clientSocket);
     }
 
-    ssize_t bytesToSend = std::min(responseStr.size(), BUFFER_SIZE);
-    std::string buffer = responseStr.substr(0, bytesToSend);
+    std::string buffer = (clientSocket == fd) ? responseStr : request.getBody();
+    ssize_t bytesToSend = std::min(buffer.size(), BUFFER_SIZE);
+    std::string data = buffer.substr(0, bytesToSend);
 
-    ssize_t bytesSend = send(fd, buffer.c_str(), buffer.size(), 0);
+    ssize_t bytesSend = write(fd, data.c_str(), data.size());
     if (bytesSend == -1) {
-        logger.perror("send");
-        return (fd);
+        if (clientSocket != fd) {
+            pipeIn = 0;
+        }
+        logger.perror("write");
+        return (clientSocket);
     }
     if (bytesSend != bytesToSend) {
+        if (clientSocket != fd) {
+            pipeIn = 0;
+        }
         logger.error() << "Error: failed to send response" << std::endl;
-        return (fd);
+        return (clientSocket);
     }
 
-    responseStr.erase(0, bytesToSend);
+    if (clientSocket == fd) {
+        responseStr.erase(0, bytesToSend);
+    } else {
+        request.eraseBody(bytesToSend);
+    }
     return (0);
 }
 
@@ -99,7 +229,7 @@ std::vector<Server>::const_iterator Client::findServer(const std::vector<Server>
     return (servers.begin());
 }
 
-void Client::matchUriAndResponseClient(const std::vector<Server>& servers) {
+void Client::matchUriAndResponseClient(const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd) {
     logger.info() << "Request: " << getMethodString(request.getMethod()) << " " << request.getUri() << " " << request.getVersion() << std::endl;
 
     // Find server that match with "Host" header
@@ -110,14 +240,33 @@ void Client::matchUriAndResponseClient(const std::vector<Server>& servers) {
 
     // Process request
     if (location == (*server).getLocations().end()) {
-        responseStr = processRequest((*server).getConfig(), request.getUri(), request.getHeaders());
+        responseStr = processRequest((*server).getConfig(), request.getUri(), request.getHeaders(), fdsToAdd);
     } else {
-        responseStr = processRequest((*location).getConfig(), request.getUri(), request.getHeaders());
+        responseStr = processRequest((*location).getConfig(), request.getUri(), request.getHeaders(), fdsToAdd);
     }
     request.clear();
 }
 
-std::string Client::processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers) {
+static std::string findCgiPath(std::string path, const t_config& config) {
+    if (config.cgiPaths.size() == 0) {
+        return ("");
+    }
+
+    size_t dotPosition = path.find_last_of('.');
+    if (dotPosition == std::string::npos) {
+        return ("");
+    }
+
+    std::string extension = path.substr(dotPosition + 1);
+    std::map<std::string, std::string>::const_iterator it = config.cgiPaths.find(extension);
+    if (it != config.cgiPaths.end()) {
+        return (it->second);
+    }
+
+    return ("");
+}
+
+std::string Client::processRequest(const t_config& config, const std::string& uri, const std::map<std::string, std::string>& headers, std::vector<pollfd>& fdsToAdd) {
     if (std::find(config.methods.begin(), config.methods.end(), request.getMethod()) == config.methods.end()) {
         return (response.createErrorResponse(405, config.root, config.errorPages));
     }
@@ -131,7 +280,10 @@ std::string Client::processRequest(const t_config& config, const std::string& ur
     }
 
     std::string path = createPath(config.root, uri);
-    if (request.getMethod() == GET) {
+    std::string execPath = findCgiPath(path, config);
+    if (!execPath.empty()) {
+        return (createCgiProcess(config, execPath, path, fdsToAdd));
+    } else if (request.getMethod() == GET) {
         return (processGetRequest(config, path, uri));
     } else if (request.getMethod() == POST) {
         return (processPostRequest(config, path, uri, headers));
