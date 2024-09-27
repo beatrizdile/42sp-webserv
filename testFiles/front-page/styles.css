@@ -16,11 +16,12 @@ body {
 	font-family: 'Barlow Semi Condensed', sans-serif;
 }
 
-.wrapper {
+.title-wrapper {
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 3em;
+    line-height: 3;
 }
 
 a {
@@ -40,6 +41,11 @@ a:hover {
 	transform: translate(-2px, -2px)
 }
 
+.button-wrapper {
+    text-align: center;
+    line-height: 7;
+}
+
 button {
     font-size: 17px;
     padding: 0.5em 2em;
@@ -48,10 +54,13 @@ button {
     background: white;
     color: black;
     border-radius: 4px;
+    align: center;
+    width: 150px;
+    height: 50px;
    }
    
    button:hover {
-    background: rgba(115, 22, 159, 255);
+    background: rgba(115, 22, 159, 0.8);
     /* background: rgb(2,0,36);
     background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgb(134, 58, 157) 100%); */
    }
