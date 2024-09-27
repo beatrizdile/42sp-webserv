@@ -18,7 +18,8 @@ NOVISU 	= 0 # 1 = no progress bar usefull when tty is not available
 FILE_EXTENSION	= .cpp
 SRCS_PATH	= ./src
 INCLUDE_PATH	= ./include -I./include/model -I./include/parser -I./include/server -I./include/server/http -I./include/utils
-SRCS	= model/Method.cpp \
+SRCS	= model/Configurations.cpp \
+				model/Method.cpp \
 				parser/AstNode.cpp \
 				parser/Config.cpp \
 				parser/LocationConfig.cpp \

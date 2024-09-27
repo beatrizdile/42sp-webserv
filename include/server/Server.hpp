@@ -3,11 +3,11 @@
 #include <string>
 #include <vector>
 
+#include "Configurations.hpp"
 #include "HttpRequest.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
-#include "config.h"
 
 class Server {
    public:
@@ -27,7 +27,7 @@ class Server {
     const std::vector<Method> &getMethods() const;
     size_t getClientBodySize() const;
     std::vector<Location>::const_iterator matchUri(std::string uri) const;
-    const t_config getConfig() const;
+    const Configurations &getConfig() const;
 
    private:
     Logger logger;
@@ -42,4 +42,5 @@ class Server {
     std::vector<Location> locations;
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
+    Configurations config;
 };

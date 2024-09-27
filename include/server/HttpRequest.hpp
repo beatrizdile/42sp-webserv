@@ -27,9 +27,8 @@ class HttpRequest {
     const std::string &getBody() const;
     bool isComplete() const;
     std::string getEtag() const;
-    bool verifyHeaderKey(const std::string &key);
-    bool verifyHeaderValue(const std::string &value);
-    void eraseBody(size_t erase);
+    static bool verifyHeaderKey(const std::string &key);
+    static bool verifyHeaderValue(const std::string &value);
 
    private:
     Logger logger;

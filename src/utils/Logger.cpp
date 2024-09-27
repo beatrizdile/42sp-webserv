@@ -43,7 +43,7 @@ std::string Logger::getCurrentTime() {
 std::ostream& Logger::log(const std::string& levelStr, LogLevel level, const std::string& color) {
     if (level >= logLevel) {
         std::ostream& output = (level == ERROR) ? std::cerr : std::cout;
-        output << color << "[" << getCurrentTime() << "][" << tag << "][" << levelStr << "] " << COLOR_RESET;
+        output << color << '[' << getCurrentTime() << "][" << tag << "][" << levelStr << "] " << COLOR_RESET;
         return (output);
     }
     return (std::cout);
@@ -67,7 +67,7 @@ std::ostream& Logger::error() {
 
 void Logger::perror(const std::string& message) {
     std::string err = strerror(errno);
-    std::cerr << COLOR_ERROR << "[" << getCurrentTime() << "][" << tag << "][ERROR] " << COLOR_RESET << message << ": " << err << std::endl;
+    std::cerr << COLOR_ERROR << '[' << getCurrentTime() << "][" << tag << "][ERROR] " << COLOR_RESET << message << ": " << err << std::endl;
 }
 
 static std::map<std::string, LogLevel> createLogLevelMap() {

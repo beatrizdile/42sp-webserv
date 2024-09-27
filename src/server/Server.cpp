@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>(GET)), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false) {}
+Server::Server() : logger(Logger("SERVER")), port(-1), host(INADDR_ANY), name(""), root(""), index(LocationConfig::DEFAULT_INDEX), clientBodySize(LocationConfig::DEFAULT_CLIENT_BODY_SIZE), methods(std::vector<Method>(GET)), locations(std::vector<Location>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), config() {}
 
 Server::Server(const ServerConfig &serverConfig) {
     logger = Logger("SERVER");
@@ -26,6 +26,7 @@ Server::Server(const ServerConfig &serverConfig) {
     for (std::vector<LocationConfig>::iterator it = locationsConfig.begin(); it != locationsConfig.end(); ++it) {
         locations.push_back(Location(*it, serverConfig.getRoot()));
     }
+    config = Configurations(autoindex, clientBodySize, "", root, index, methods, errorPages, std::map<std::string, std::string>());
 }
 
 Server::Server(const Server &other) {
@@ -45,6 +46,7 @@ Server &Server::operator=(const Server &other) {
         locations = other.locations;
         errorPages = other.errorPages;
         autoindex = other.autoindex;
+        config = other.config;
     }
     return (*this);
 }
@@ -108,15 +110,6 @@ size_t Server::getClientBodySize() const {
     return (clientBodySize);
 }
 
-const t_config Server::getConfig() const {
-    t_config config = {
-        autoindex,
-        clientBodySize,
-        "",
-        root,
-        index,
-        methods,
-        errorPages,
-        std::map<std::string, std::string>()};
+const Configurations &Server::getConfig() const {
     return (config);
 }

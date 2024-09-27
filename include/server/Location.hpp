@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 
+#include "Configurations.hpp"
 #include "LocationConfig.hpp"
 #include "Logger.hpp"
-#include "config.h"
 
 class Location {
    public:
@@ -21,7 +21,7 @@ class Location {
     const std::string &getIndex() const;
     const std::vector<Method> &getMethods() const;
     bool getAutoindex() const;
-    const t_config getConfig() const;
+    const Configurations &getConfig() const;
 
    private:
     Logger logger;
@@ -35,4 +35,5 @@ class Location {
     std::vector<std::pair<size_t, std::string> > errorPages;
     bool autoindex;
     std::map<std::string, std::string> cgiPaths;
+    Configurations config;
 };

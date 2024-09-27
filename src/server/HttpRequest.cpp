@@ -117,7 +117,7 @@ void HttpRequest::parseFristLine() {
 
     method = getMethodFromString(stringMethod);
     if (method == INVALID) {
-        throw std::runtime_error("Invalid method found '" + stringMethod + "'");
+        throw std::runtime_error("Invalid method found '" + stringMethod + '\'');
     }
 
     if (uri.find_first_not_of(URI_CHARACTERS) != std::string::npos) {
@@ -125,7 +125,7 @@ void HttpRequest::parseFristLine() {
     }
 
     if (version != HTTP_VERSION) {
-        throw std::runtime_error("Invalid HTTP version '" + version + "'");
+        throw std::runtime_error("Invalid HTTP version '" + version + '\'');
     }
 }
 
@@ -139,19 +139,19 @@ void HttpRequest::parseHeaders(size_t endPos) {
         data = data.substr(pos + 2);
 
         if ((pos = line.find(':')) == std::string::npos) {
-            throw std::runtime_error("Invalid header '" + line + "'");
+            throw std::runtime_error("Invalid header '" + line + '\'');
         }
 
         std::string key = line.substr(0, pos);
         if (verifyHeaderKey(key)) {
-            throw std::runtime_error("Invalid header key '" + key + "'");
+            throw std::runtime_error("Invalid header key '" + key + '\'');
         }
         lowercase(key);
 
         std::string value = line.substr(pos + 1);
         trim(value);
         if (verifyHeaderValue(value)) {
-            throw std::runtime_error("Invalid header value '" + value + "'");
+            throw std::runtime_error("Invalid header value '" + value + '\'');
         }
 
         headers[key] = value;
@@ -162,7 +162,7 @@ void HttpRequest::parseHeaders(size_t endPos) {
         long size = std::strtol(headers[CONTENT_LENTH_HEADER_KEY].c_str(), &end, 10);
         // check se Content-Length é maior que body size because yeah
         if (*end != '\0' || size < 0) {
-            throw std::runtime_error("Invalid Content-Length '" + headers[CONTENT_LENTH_HEADER_KEY] + "'");
+            throw std::runtime_error("Invalid Content-Length '" + headers[CONTENT_LENTH_HEADER_KEY] + '\'');
         }
         contentLength = size;
     }
@@ -194,10 +194,6 @@ const std::map<std::string, std::string> &HttpRequest::getHeaders() const {
 
 const std::string &HttpRequest::getBody() const {
     return (body);
-}
-
-void HttpRequest::eraseBody(size_t erase) {
-    body.erase(0, erase);
 }
 
 bool HttpRequest::isComplete() const {

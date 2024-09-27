@@ -14,7 +14,7 @@ const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
 const std::string HttpResponse::HTTP_VERSION = "HTTP/1.1";
 const std::string HttpResponse::DEFAULT_MIME_TYPE = "text/plain";
 
-HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag(""), hasZeroContentLength(false) {}
+HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag(""), hasZeroContentLength(false), extraHeaders() {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -32,6 +32,7 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
         etag = assign.etag;
         location = assign.location;
         hasZeroContentLength = assign.hasZeroContentLength;
+        extraHeaders = assign.extraHeaders;
     }
 
     return *this;
@@ -44,14 +45,20 @@ std::string HttpResponse::createResponse() {
         generateDefaultErrorPage();
     }
 
-    serverResponse << HTTP_VERSION << " " << httpStatus << " " << getStatusMessage() << "\r\n";
+    serverResponse << HTTP_VERSION << ' ' << httpStatus << ' ' << getStatusMessage() << "\r\n";
     serverResponse << "Server: " << SERVER_NAME << "\r\n";
     serverResponse << "Date: " << createDate() << "\r\n";
 
     if (!contentType.empty())
         serverResponse << "Content-Type: " << contentType << "\r\n";
 
-    if (!body.empty() || hasZeroContentLength)
+    if (!extraHeaders.empty()) {
+        for (std::map<std::string, std::string>::const_iterator it = extraHeaders.begin(); it != extraHeaders.end(); ++it) {
+            serverResponse << it->first << ": " << it->second << "\r\n";
+        }
+    }
+
+    if ((!body.empty() || hasZeroContentLength) && extraHeaders.find("Content-Length") == extraHeaders.end())
         serverResponse << "Content-Length: " << (hasZeroContentLength ? 0 : body.size()) << "\r\n";
 
     if (!lastModified.empty())
@@ -92,6 +99,7 @@ void HttpResponse::clear() {
     fileName.clear();
     etag.clear();
     location.clear();
+    extraHeaders.clear();
     hasZeroContentLength = false;
 }
 
@@ -107,9 +115,9 @@ void HttpResponse::generateDefaultErrorPage() {
     std::ostringstream errorPage;
 
     errorPage << "<html>\n";
-    errorPage << "<head><title>" << httpStatus << " " << getStatusMessage() << "</title></head>\n";
+    errorPage << "<head><title>" << httpStatus << ' ' << getStatusMessage() << "</title></head>\n";
     errorPage << "<body>\n";
-    errorPage << "<center><h1>" << httpStatus << " " << getStatusMessage() << "</h1></center>\n";
+    errorPage << "<center><h1>" << httpStatus << ' ' << getStatusMessage() << "</h1></center>\n";
     errorPage << "<hr><center>" << SERVER_NAME << "</center>\n";
     errorPage << "</body>\n";
     errorPage << "</html>\n";
@@ -255,7 +263,7 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         indexPage << "<a href='" << strName + ((dent->d_type == DT_DIR) ? "/" : "") << "'>" << std::setw(50) << std::left << strName + "</a>";
 
         struct stat fileInfo;
-        if (stat((directoryPath + "/" + strName).c_str(), &fileInfo) != 0) {
+        if (stat((directoryPath + '/' + strName).c_str(), &fileInfo) != 0) {
             httpStatus = 500;
             closedir(dir);
             return;
@@ -270,9 +278,9 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
         indexPage << date;
 
         if (dent->d_type == DT_DIR)
-            indexPage << std::setw(30) << std::right << "-" << "\n";
+            indexPage << std::setw(30) << std::right << '-' << std::endl;
         else
-            indexPage << std::setw(30) << std::right << fileInfo.st_size << "\n";
+            indexPage << std::setw(30) << std::right << fileInfo.st_size << std::endl;
     }
     closedir(dir);
     indexPage << "</pre><hr></body></html>";
@@ -284,6 +292,17 @@ void HttpResponse::createAutoindex(const std::string &directoryPath, const std::
 
 std::string HttpResponse::createResponseFromStatus(size_t status) {
     httpStatus = status;
+    std::string responseString = createResponse();
+    clear();
+    return (responseString);
+}
+
+std::string HttpResponse::createCgiResponse(size_t status, const std::string &body, const std::map<std::string, std::string> &headers) {
+    httpStatus = status;
+    this->body = body;
+    hasZeroContentLength = body.empty();
+    extraHeaders = headers;
+
     std::string responseString = createResponse();
     clear();
     return (responseString);
@@ -321,7 +340,7 @@ std::string HttpResponse::createIndexResponse(const std::string &directoryPath, 
 
 void HttpResponse::generateEtag(const struct stat &fileInfo) {
     std::ostringstream etagStream;
-    etagStream << std::hex << '"' << fileInfo.st_mtime << "-" << fileInfo.st_size << '"';
+    etagStream << std::hex << '"' << fileInfo.st_mtime << '-' << fileInfo.st_size << '"';
     etag = etagStream.str();
 }
 

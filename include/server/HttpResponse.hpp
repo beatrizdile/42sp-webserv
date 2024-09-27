@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@ class HttpResponse {
     std::string etag;
     std::string location;
     bool hasZeroContentLength;
+    std::map<std::string, std::string> extraHeaders;
 
     std::string createDate();
     std::string getStatusMessage();
@@ -35,7 +37,8 @@ class HttpResponse {
 
     std::string createResponseFromStatus(size_t status);
     std::string createResponseFromLocation(size_t status, const std::string &location);
-    std::string createIndexResponse(const std::string &directoryPath, const std::string &uri, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
-    std::string createFileResponse(const std::string &filePath, const std::string &etag, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
+    std::string createCgiResponse(size_t status, const std::string &body, const std::map<std::string, std::string> &headers);
     std::string createErrorResponse(size_t status, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
+    std::string createFileResponse(const std::string &filePath, const std::string &etag, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
+    std::string createIndexResponse(const std::string &directoryPath, const std::string &uri, const std::string &root, const std::vector<std::pair<size_t, std::string> > &errorPages);
 };

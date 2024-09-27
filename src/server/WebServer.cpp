@@ -72,67 +72,71 @@ void WebServer::runServers() {
     std::vector<pollfd> fdsToAdd;
 
     while (true) {
-        int affected = 0;
-        int currentAffected = 0;
-        if ((affected = poll(fds.data(), fds.size(), -1)) < 0) {
-            throw createError("poll");
-        }
-
-        for (std::vector<struct pollfd>::iterator fd = fds.begin(); fd != fds.end() && currentAffected < affected; ++fd) {
-            if ((*fd).revents == 0) {
-                continue;
+        try {
+            int affected = 0;
+            int currentAffected = 0;
+            if ((affected = poll(fds.data(), fds.size(), -1)) < 0) {
+                throw createError("poll");
             }
 
-            currentAffected++;
-            if ((*fd).revents & POLLIN) {
-                std::vector<ServerManager>::iterator server = findServerFd((*fd).fd);
+            for (std::vector<struct pollfd>::iterator fd = fds.begin(); fd != fds.end() && currentAffected < affected; ++fd) {
+                if ((*fd).revents == 0) {
+                    continue;
+                }
 
-                if (server != servers.end()) {
-                    logger.info() << "New connection on fd " << (*fd).fd << std::endl;
-                    int clientFd = (*server).acceptConnection();
-                    if (clientFd < 0) {
-                        logger.perror("accept");
-                        continue;
+                currentAffected++;
+                if ((*fd).revents & POLLIN) {
+                    std::vector<ServerManager>::iterator server = findServerFd((*fd).fd);
+
+                    if (server != servers.end()) {
+                        logger.info() << "New connection on fd " << (*fd).fd << std::endl;
+                        int clientFd = (*server).acceptConnection();
+                        if (clientFd < 0) {
+                            logger.perror("accept");
+                            continue;
+                        }
+                        struct pollfd pfd;
+                        pfd.fd = clientFd;
+                        pfd.events = POLLIN | POLLOUT | POLLNVAL | POLLHUP | POLLERR;
+                        pfd.revents = 0;
+                        fdsToAdd.push_back(pfd);
+                    } else {
+                        std::vector<ServerManager>::iterator it = findServerClientFd((*fd).fd);
+                        if ((*it).processClientRequest((*fd).fd, fdsToAdd) != 0) {
+                            fdsToRemove.push_back((*fd).fd);
+                        }
                     }
-                    struct pollfd pfd;
-                    pfd.fd = clientFd;
-                    pfd.events = POLLIN | POLLOUT | POLLNVAL | POLLHUP | POLLERR;
-                    pfd.revents = 0;
-                    fdsToAdd.push_back(pfd);
-                } else {
+                } else if ((*fd).revents & POLLOUT) {
                     std::vector<ServerManager>::iterator it = findServerClientFd((*fd).fd);
-                    if ((*it).processClientRequest((*fd).fd, fdsToAdd) != 0) {
+                    if ((*it).sendClientResponse((*fd).fd) != 0) {
                         fdsToRemove.push_back((*fd).fd);
                     }
-                }
-            } else if ((*fd).revents & POLLOUT) {
-                std::vector<ServerManager>::iterator it = findServerClientFd((*fd).fd);
-                if ((*it).sendClientResponse((*fd).fd) != 0) {
+                } else if ((*fd).revents & POLLNVAL) {
+                    logger.error() << "Invalid request on fd " << (*fd).fd << std::endl;
                     fdsToRemove.push_back((*fd).fd);
+                } else if ((*fd).revents & POLLERR) {
+                    logger.error() << "Error on fd " << (*fd).fd << std::endl;
+                    fdsToRemove.push_back((*fd).fd);
+                } else if ((*fd).revents & POLLHUP) {
+                    logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
+                    fdsToRemove.push_back((*fd).fd);
+                } else {
+                    logger.info() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
                 }
-            } else if ((*fd).revents & POLLNVAL) {
-                logger.error() << "Invalid request on fd " << (*fd).fd << std::endl;
-                fdsToRemove.push_back((*fd).fd);
-            } else if ((*fd).revents & POLLERR) {
-                logger.error() << "Error on fd " << (*fd).fd << std::endl;
-                fdsToRemove.push_back((*fd).fd);
-            } else if ((*fd).revents & POLLHUP) {
-                logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
-                fdsToRemove.push_back((*fd).fd);
-            } else {
-                logger.info() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
             }
-        }
 
-        for (std::vector<int>::iterator it = fdsToRemove.begin(); it != fdsToRemove.end(); ++it) {
-            removeClient(*it);
-        }
-        fdsToRemove.clear();
+            for (std::vector<int>::iterator it = fdsToRemove.begin(); it != fdsToRemove.end(); ++it) {
+                removeClient(*it);
+            }
+            fdsToRemove.clear();
 
-        for (std::vector<pollfd>::iterator it = fdsToAdd.begin(); it != fdsToAdd.end(); ++it) {
-            fds.push_back(*it);
+            for (std::vector<pollfd>::iterator it = fdsToAdd.begin(); it != fdsToAdd.end(); ++it) {
+                fds.push_back(*it);
+            }
+            fdsToAdd.clear();
+        } catch (std::exception& e) {
+            logger.error() << "Error: " << e.what() << std::endl;
         }
-        fdsToAdd.clear();
     }
 }
 

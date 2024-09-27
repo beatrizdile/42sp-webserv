@@ -1,6 +1,6 @@
 #include "Location.hpp"
 
-Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), cgiPaths() {}
+Location::Location() : logger(Logger("LOCATION")), path(""), root(""), index(LocationConfig::DEFAULT_INDEX), redirect(""), clientBodySize(0), methods(std::vector<Method>()), errorPages(std::vector<std::pair<size_t, std::string> >()), autoindex(false), cgiPaths(), config() {}
 
 Location::Location(const LocationConfig& locationConfig, const std::string& serverRoot) {
     logger = Logger("LOCATION");
@@ -19,6 +19,7 @@ Location::Location(const LocationConfig& locationConfig, const std::string& serv
     errorPages = locationConfig.getErrorPages();
     autoindex = locationConfig.getAutoindex();
     cgiPaths = locationConfig.getCgiPaths();
+    config = Configurations(autoindex, clientBodySize, redirect, root, index, methods, errorPages, cgiPaths);
 }
 
 Location::Location(const Location& other) {
@@ -37,6 +38,7 @@ Location& Location::operator=(const Location& other) {
         errorPages = other.errorPages;
         autoindex = other.autoindex;
         cgiPaths = other.cgiPaths;
+        config = other.config;
     }
     return (*this);
 }
@@ -67,15 +69,6 @@ size_t Location::getClientBodySize() const {
     return (clientBodySize);
 }
 
-const t_config Location::getConfig() const {
-    t_config config = {
-        autoindex,
-        clientBodySize,
-        redirect,
-        root,
-        index,
-        methods,
-        errorPages,
-        cgiPaths};
+const Configurations& Location::getConfig() const {
     return (config);
 }
