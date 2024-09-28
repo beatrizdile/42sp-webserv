@@ -11,12 +11,13 @@
 #include <fstream>
 #include <sstream>
 
-const size_t Client::BUFFER_SIZE = 1024;
-const long long Client::CGI_TIMEOUT_IN_SECONDS = 8; // 8 seconds
+const size_t Client::READ_BUFFER_SIZE = 1024 * 2;          // 2 KB
+const size_t Client::WRITE_BUFFER_SIZE = 1024 * 1024 * 1;  // 1 MB
+const long long Client::CGI_TIMEOUT_IN_SECONDS = 8;        // 8 seconds
 
-Client::Client() : fd(0), pipeIn(0), pipeOut(0), logger(Logger("Client")) {}
+Client::Client() : fd(0), pipeIn(0), pipeOut(0), request(), response(), responseStr(""), cgiOutputStr(""), cgiInputStr(""), cgiPid(0), cgiStarProcessTimestamp(0), cgiConfig(), logger("CLIENT") {}
 
-Client::Client(int fd) : fd(fd), pipeIn(0), pipeOut(0), logger(Logger("Client")) {}
+Client::Client(int fd) : fd(fd), pipeIn(0), pipeOut(0), request(), response(), responseStr(""), cgiOutputStr(""), cgiInputStr(""), cgiPid(0), cgiStarProcessTimestamp(0), cgiConfig(), logger("CLIENT") {}
 
 Client::~Client() {}
 
@@ -131,6 +132,7 @@ std::string Client::createCgiProcess(const Configurations& config, std::string& 
         setenv("SERVER_PROTOCOL", request.getVersion().c_str(), 1);
         setenv("SERVER_SOFTWARE", "webserv", 1);
         setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
+        setenv("QUERY_STRING", request.getQueryParameters().c_str(), 1);
         setenv("CONTENT_LENGTH", numberToString(request.getBody().size()).c_str(), 1);
         setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
 
@@ -181,10 +183,10 @@ void Client::closeAll() const {
 }
 
 int Client::processSendedData(int fdAffected, const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd) {
-    char buffer[BUFFER_SIZE];
+    char buffer[READ_BUFFER_SIZE];
     ssize_t bytesRead = 0;
 
-    bytesRead = read(fdAffected, buffer, BUFFER_SIZE);
+    bytesRead = read(fdAffected, buffer, READ_BUFFER_SIZE);
     if (bytesRead == -1) {
         logger.perror("read");
         if (fdAffected != fd) {
@@ -197,15 +199,12 @@ int Client::processSendedData(int fdAffected, const std::vector<Server>& servers
         if (fdAffected != fd) {
             pipeOut = 0;
             readCgiResponse();
-        } else {
-            logger.info() << "Client disconnected on fd " << fdAffected << std::endl;
         }
         return (fdAffected);
     }
 
     if (fdAffected != fd) {
         cgiOutputStr += std::string(buffer, bytesRead);
-        logger.info() << "cgiOutputStr: " << cgiOutputStr << std::endl;
         return (0);
     }
 
@@ -223,7 +222,6 @@ int Client::processSendedData(int fdAffected, const std::vector<Server>& servers
 }
 
 void Client::readCgiResponse() {
-    logger.info() << "Cgi response: " << cgiOutputStr << std::endl;
     int status;
     waitpid(cgiPid, &status, 0);
     cgiPid = 0;
@@ -308,11 +306,10 @@ int Client::sendResponse(int clientSocket) {
     }
 
     std::string buffer = (clientSocket == fd) ? responseStr : cgiInputStr;
-    ssize_t bytesToSend = std::min(buffer.size(), BUFFER_SIZE);
+    ssize_t bytesToSend = std::min(buffer.size(), WRITE_BUFFER_SIZE);
     std::string data = buffer.substr(0, bytesToSend);
 
     ssize_t bytesSend = write(clientSocket, data.c_str(), data.size());
-    logger.info() << "Write: " << data << std::endl;
     if (bytesSend == -1) {
         if (clientSocket != fd) {
             pipeIn = 0;

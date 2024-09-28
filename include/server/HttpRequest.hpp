@@ -22,6 +22,7 @@ class HttpRequest {
 
     Method getMethod() const;
     const std::string &getUri() const;
+    const std::string &getQueryParameters() const;
     const std::string &getVersion() const;
     const std::map<std::string, std::string> &getHeaders() const;
     const std::string &getBody() const;
@@ -36,6 +37,7 @@ class HttpRequest {
     std::string rawData;
     Method method;
     std::string uri;
+    std::string queryParameters;
     std::string version;
     std::map<std::string, std::string> headers;
     std::string body;

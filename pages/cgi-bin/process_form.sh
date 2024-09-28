@@ -15,6 +15,8 @@ if [ "$REQUEST_METHOD" = "POST" ]; then
     # Lê o conteúdo do stdin (corpo da requisição)
     read -n "$CONTENT_LENGTH" POST_DATA
     FORM_DATA=$POST_DATA
+elif [ "$REQUEST_METHOD" = "GET" ]; then
+    FORM_DATA=$QUERY_STRING
 else
     echo "<h1>Método de requisição não suportado: $REQUEST_METHOD</h1>"
     exit 1

@@ -14,7 +14,6 @@
 class ServerManager {
    public:
     static const size_t MAX_CLIENTS;
-    static const size_t BUFFER_SIZE;
 
     ServerManager();
     ServerManager(const std::vector<ServerConfig> &serverConfig);
@@ -34,7 +33,7 @@ class ServerManager {
     int processHandUp(int clientSocket);
     bool isClient(int clientSocket) const;
     bool isPipeOutClient(int clientSocket);
-    void verifyClientsCgiTimeout(std::vector<int>& fdsToRemove);
+    void verifyClientsCgiTimeout(std::vector<int> &fdsToRemove);
 
    private:
     Logger logger;

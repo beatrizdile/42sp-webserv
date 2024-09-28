@@ -4,7 +4,7 @@
 
 NAME	= webserv
 CC 		= c++
-CFLAGS	= -Wall -Wextra -Werror -g3 -std=c++98
+CFLAGS	= -Wall -Wextra -Werror -g3 -O3 -std=c++98
 DFLAGS	= -MMD -MF $(@:.o=.d)
 AUTHOR	= Paulo/Bia
 DATE	= 27/07/2024
@@ -242,7 +242,7 @@ fclean:		header clean
 re:			fclean all
 
 val:
-			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/paulo.conf
+			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/default.conf
 
 reval: fclean all val
 

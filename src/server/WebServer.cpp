@@ -89,7 +89,6 @@ void WebServer::runServers() {
                     std::vector<ServerManager>::iterator server = findServerFd((*fd).fd);
 
                     if (server != servers.end()) {
-                        logger.info() << "New connection on fd " << (*fd).fd << std::endl;
                         int clientFd = (*server).acceptConnection();
                         if (clientFd < 0) {
                             logger.perror("accept");
@@ -121,9 +120,8 @@ void WebServer::runServers() {
                     std::vector<ServerManager>::iterator it = findServerClientPipeOutput((*fd).fd);
                     (*it).processHandUp((*fd).fd);
                     fdsToRemove.push_back((*fd).fd);
-                    logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
                 } else {
-                    logger.info() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
+                    logger.error() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
                 }
             }
 

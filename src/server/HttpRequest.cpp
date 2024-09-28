@@ -17,7 +17,7 @@ const std::string HttpRequest::CONTENT_LENTH_HEADER_KEY = "content-length";
 const std::string HttpRequest::HEADER_ETAG_KEY = "if-none-match";
 const std::string HttpRequest::HEADER_CONTENT_TYPE_KEY = "content-type";
 
-HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
+HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), queryParameters(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
 
 HttpRequest::HttpRequest(const HttpRequest &copy) {
     *this = copy;
@@ -31,6 +31,7 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &assign) {
         rawData = assign.rawData;
         method = assign.method;
         uri = assign.uri;
+        queryParameters = assign.queryParameters;
         version = assign.version;
         headers = assign.headers;
         body = assign.body;
@@ -43,6 +44,7 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &assign) {
 void HttpRequest::clear() {
     method = INVALID;
     uri.clear();
+    queryParameters.clear();
     version.clear();
     headers.clear();
     body.clear();
@@ -98,6 +100,12 @@ void HttpRequest::parseFristLine() {
     ss >> stringMethod;
     ss >> uri;
     ss >> version;
+
+    size_t queryPos = uri.find('?');
+    if (queryPos != std::string::npos) {
+        queryParameters = uri.substr(queryPos + 1);
+        uri = uri.substr(0, queryPos);
+    }
 
     if (stringMethod.empty()) {
         throw std::runtime_error("Not found method");
@@ -182,6 +190,10 @@ Method HttpRequest::getMethod() const {
 
 const std::string &HttpRequest::getUri() const {
     return (uri);
+}
+
+const std::string &HttpRequest::getQueryParameters() const {
+    return (queryParameters);
 }
 
 const std::string &HttpRequest::getVersion() const {

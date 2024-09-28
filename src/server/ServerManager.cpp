@@ -13,7 +13,6 @@
 #include <string>
 
 const size_t ServerManager::MAX_CLIENTS = 1000;
-const size_t ServerManager::BUFFER_SIZE = 1024;
 
 ServerManager::ServerManager() : logger(Logger("SERVER_MANAGER")), socketFd(0), port(-1), host(INADDR_ANY), servers(std::vector<Server>()), clients(std::vector<Client>()), request(HttpRequest()), response(HttpResponse()) {}
 
@@ -163,7 +162,6 @@ int ServerManager::removeClient(int clientSocket) {
     }
     return (clientSocket);
 }
-
 
 bool ServerManager::isPipeOutClient(int clientSocket) {
     for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
