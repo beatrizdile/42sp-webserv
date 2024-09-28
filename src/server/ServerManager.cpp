@@ -83,6 +83,12 @@ int ServerManager::initServer() {
     return (socketFd);
 }
 
+void ServerManager::verifyClientsCgiTimeout(std::vector<int>& fdsToRemove) {
+    for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        it->verifyCgiTimeout(fdsToRemove);
+    }
+}
+
 std::vector<int> ServerManager::finishServer() const {
     if (socketFd != 0)
         close(socketFd);
@@ -132,6 +138,12 @@ int ServerManager::processClientRequest(int clientSocket, std::vector<pollfd>& f
     return (0);
 }
 
+int ServerManager::processHandUp(int clientSocket) {
+    Client& client = getClient(clientSocket);
+    client.readCgiResponse();
+    return (clientSocket);
+}
+
 int ServerManager::sendClientResponse(int clientSocket) {
     Client& client = getClient(clientSocket);
     int fd = client.sendResponse(clientSocket);
@@ -150,6 +162,16 @@ int ServerManager::removeClient(int clientSocket) {
         }
     }
     return (clientSocket);
+}
+
+
+bool ServerManager::isPipeOutClient(int clientSocket) {
+    for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if ((*it).getPipeOut() == clientSocket) {
+            return (true);
+        }
+    }
+    return (false);
 }
 
 Client& ServerManager::getClient(int clientSocket) {

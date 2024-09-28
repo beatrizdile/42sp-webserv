@@ -31,7 +31,10 @@ class ServerManager {
     int getFd() const;
     int processClientRequest(int clientSocket, std::vector<pollfd> &fdsToAdd);
     int sendClientResponse(int clientSocket);
+    int processHandUp(int clientSocket);
     bool isClient(int clientSocket) const;
+    bool isPipeOutClient(int clientSocket);
+    void verifyClientsCgiTimeout(std::vector<int>& fdsToRemove);
 
    private:
     Logger logger;

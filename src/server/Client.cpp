@@ -12,6 +12,7 @@
 #include <sstream>
 
 const size_t Client::BUFFER_SIZE = 1024;
+const long long Client::CGI_TIMEOUT_IN_SECONDS = 8; // 8 seconds
 
 Client::Client() : fd(0), pipeIn(0), pipeOut(0), logger(Logger("Client")) {}
 
@@ -44,8 +45,25 @@ int Client::getFd() const {
     return this->fd;
 }
 
+int Client::getPipeOut() const {
+    return this->pipeOut;
+}
+
 bool Client::isFdValid(int fd) const {
     return (fd == this->fd || fd == pipeIn || fd == pipeOut);
+}
+
+static long long getTimestampSeconds() {
+    std::time_t now = std::time(0);
+    return (static_cast<long long>(now));
+}
+
+static int setNonBlockingFlag(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        return (-1);
+    }
+    return (fcntl(fd, F_SETFL, flags | O_NONBLOCK));
 }
 
 std::string Client::createCgiProcess(const Configurations& config, std::string& execPath, std::string& scriptPath, std::vector<pollfd>& fdsToAdd) {
@@ -59,12 +77,28 @@ std::string Client::createCgiProcess(const Configurations& config, std::string& 
     if (pipe(pipeOutput) == -1) {
         return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
     }
+
+    if (setNonBlockingFlag(pipeOutput[0]) == -1 || setNonBlockingFlag(pipeOutput[1]) == -1) {
+        close(pipeOutput[0]);
+        close(pipeOutput[1]);
+        return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
+    }
+
     if (!request.getBody().empty() && pipe(pipeInput) == -1) {
         close(pipeOutput[0]);
         close(pipeOutput[1]);
         return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
     }
 
+    if (pipeInput[0] != -1 && (setNonBlockingFlag(pipeInput[0]) == -1 || setNonBlockingFlag(pipeInput[1]) == -1)) {
+        close(pipeOutput[0]);
+        close(pipeOutput[1]);
+        close(pipeInput[0]);
+        close(pipeInput[1]);
+        return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
+    }
+
+    cgiStarProcessTimestamp = getTimestampSeconds();
     int pid = fork();
     if (pid == -1) {
         close(pipeOutput[0]);
@@ -192,6 +226,7 @@ void Client::readCgiResponse() {
     logger.info() << "Cgi response: " << cgiOutputStr << std::endl;
     int status;
     waitpid(cgiPid, &status, 0);
+    cgiPid = 0;
 
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         responseStr = response.createErrorResponse(500, cgiConfig.getRoot(), cgiConfig.getErrorPages());
@@ -243,6 +278,25 @@ void Client::readCgiResponse() {
 
     cgiOutputStr.clear();
     responseStr = response.createCgiResponse(200, body, responseHeaders);
+}
+
+void Client::verifyCgiTimeout(std::vector<int>& fdsToRemove) {
+    if (cgiPid == 0) {
+        return;
+    }
+
+    long long currentTimestamp = getTimestampSeconds();
+    if (currentTimestamp - cgiStarProcessTimestamp > CGI_TIMEOUT_IN_SECONDS) {
+        kill(cgiPid, SIGKILL);
+        cgiPid = 0;
+        cgiOutputStr.clear();
+        cgiInputStr.clear();
+        fdsToRemove.push_back(pipeOut);
+        fdsToRemove.push_back(pipeIn);
+        pipeOut = 0;
+        pipeIn = 0;
+        responseStr = response.createErrorResponse(408, cgiConfig.getRoot(), cgiConfig.getErrorPages());
+    }
 }
 
 int Client::sendResponse(int clientSocket) {

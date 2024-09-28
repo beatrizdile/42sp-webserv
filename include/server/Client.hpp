@@ -13,6 +13,7 @@
 class Client {
    public:
     static const size_t BUFFER_SIZE;
+    static const long long CGI_TIMEOUT_IN_SECONDS;
 
     Client();
     ~Client();
@@ -21,10 +22,13 @@ class Client {
     Client& operator=(const Client& other);
 
     int getFd() const;
+    int getPipeOut() const;
     bool isFdValid(int fd) const;
     int processSendedData(int fdAffected, const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd);
     int sendResponse(int clientSocket);
     void closeAll() const;
+    void readCgiResponse();
+    void verifyCgiTimeout(std::vector<int>& fdsToRemove);
 
    private:
     int fd;
@@ -35,11 +39,11 @@ class Client {
     std::string responseStr;
     std::string cgiOutputStr;
     std::string cgiInputStr;
-    Configurations cgiConfig;
     int cgiPid;
+    long long cgiStarProcessTimestamp;
+    Configurations cgiConfig;
     Logger logger;
 
-    void readCgiResponse();
     std::string createCgiProcess(const Configurations& config, std::string& execPath, std::string& scriptPath, std::vector<pollfd>& fdsToAdd);
     void matchUriAndResponseClient(const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd);
     std::string processRequest(const Configurations& config, std::vector<pollfd>& fdsToAdd);

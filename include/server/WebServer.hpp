@@ -30,4 +30,5 @@ class WebServer {
     std::vector<ServerManager>::iterator findServerFd(int fd);
     void removeClient(int clientfd);
     std::vector<ServerManager>::iterator findServerClientFd(int clientFd);
+    std::vector<ServerManager>::iterator findServerClientPipeOutput(int clientFd);
 };

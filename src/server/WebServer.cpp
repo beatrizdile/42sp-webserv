@@ -118,11 +118,17 @@ void WebServer::runServers() {
                     logger.error() << "Error on fd " << (*fd).fd << std::endl;
                     fdsToRemove.push_back((*fd).fd);
                 } else if ((*fd).revents & POLLHUP) {
-                    logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
+                    std::vector<ServerManager>::iterator it = findServerClientPipeOutput((*fd).fd);
+                    (*it).processHandUp((*fd).fd);
                     fdsToRemove.push_back((*fd).fd);
+                    logger.info() << "Client disconnected on fd " << (*fd).fd << std::endl;
                 } else {
                     logger.info() << "Unknown event on fd " << (*fd).fd << " events: " << (*fd).revents << std::endl;
                 }
+            }
+
+            for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
+                (*it).verifyClientsCgiTimeout(fdsToRemove);
             }
 
             for (std::vector<int>::iterator it = fdsToRemove.begin(); it != fdsToRemove.end(); ++it) {
@@ -143,6 +149,16 @@ void WebServer::runServers() {
 std::vector<ServerManager>::iterator WebServer::findServerClientFd(int clientFd) {
     for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
         if (it->isClient(clientFd)) {
+            return (it);
+        }
+    }
+
+    throw std::runtime_error("Client with fd " + numberToString(clientFd) + " not found");
+}
+
+std::vector<ServerManager>::iterator WebServer::findServerClientPipeOutput(int clientFd) {
+    for (std::vector<ServerManager>::iterator it = servers.begin(); it != servers.end(); ++it) {
+        if (it->isPipeOutClient(clientFd)) {
             return (it);
         }
     }
