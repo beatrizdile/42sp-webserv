@@ -13,7 +13,7 @@
 
 const size_t Client::READ_BUFFER_SIZE = 1024 * 2;          // 2 KB
 const size_t Client::WRITE_BUFFER_SIZE = 1024 * 1024 * 1;  // 1 MB
-const long long Client::CGI_TIMEOUT_IN_SECONDS = 8;        // 8 seconds
+const long long Client::CGI_TIMEOUT_IN_SECONDS = 2;        // 2 seconds
 
 Client::Client() : fd(0), pipeIn(0), pipeOut(0), request(), response(), responseStr(""), cgiOutputStr(""), cgiInputStr(""), cgiPid(0), cgiStarProcessTimestamp(0), cgiConfig(), logger("CLIENT") {}
 

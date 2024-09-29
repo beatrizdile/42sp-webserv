@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Post</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" href="/resources/favicon.png">
+  </head>
+  <body>
+    <div class="content">
+      <h1>Post</h1>
+
+      <div class="form-wrapper">
+        <div class="input-wrapper">
+          <label for="fileInput" class="custom-file-upload">
+            Escolher Arquivo
+          </label>
+          <input type="file" id="fileInput" required />
+          <span id="fileName" class="file-name">Nenhum arquivo selecionado</span>
+        </div>
+        <button class="button-style" onclick="uploadFile()">Enviar</button>
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const fileNameSpan = document.getElementById('fileName');
+  
+      fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          fileNameSpan.textContent = this.files[0].name;
+        } else {
+          fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+        }
+      });
+    </script>
+  
+
+    <script>
+      function formatFileNameAsSlug(fileName) {
+        const parts = fileName.split('.');
+        const extension = parts.pop();
+        const baseName = parts.join('.');
+
+       
+        const slugifiedBase = baseName
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+
+        return `${slugifiedBase}.${extension.toLowerCase()}`;
+      }
+
+      async function uploadFile() {
+        const input = document.getElementById("fileInput");
+        const file = input.files[0];
+
+        if (!file) {
+          alert("Por favor, selecione um arquivo.");
+          return;
+        }
+
+        const fileName = formatFileNameAsSlug(file.name);
+        const fileBuffer = await file.arrayBuffer();
+
+        fetch(`/upload/${fileName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+          body: fileBuffer,
+        })
+          .then((response) => {
+            if (response.ok) {
+              alert("Upload realizado com sucesso!");
+            } else {
+              alert("Falha no upload.");
+            }
+          })
+          .catch((error) => {
+            console.error("Erro ao enviar o arquivo:", error);
+            alert("Erro ao enviar o arquivo.");
+          });
+      }
+    </script>
+  </body>
+</html>

@@ -57,25 +57,10 @@ a.title:hover {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    height: 600px;
-    justify-content: space-between;
     line-height: 7;
 }
 
-.content {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    width: 600px;
-    align-items: center;
-    justify-content: center;
-    padding: 4em;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
-    box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
-}
-
-.button-style {
+input.button-style {
     font-size: 17px;
     padding: 0.5em 2em;
     border: transparent;
@@ -90,28 +75,32 @@ a.title:hover {
     line-height: 36px;
 }
 
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    width: 600px;
+    align-items: center;
+    justify-content: center;
+    padding: 4em;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+}
    
-.button-style:hover {
+input.button-style:hover {
     background: rgba(115, 22, 159, 0.8);
     /* background: rgb(2,0,36);
     background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgb(134, 58, 157) 100%); */
 }
    
-.button-style:active {
+input.button-style:active {
     transform: translate(0em, 0.2em);
 }
 
 .input-wrapper {
-    display: flex;
-    gap: 1em;
     width: 100%;
-    justify-content: center;
-    color: white;
-}
-
-.input-text {
-    font-size: 1.5em;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    height: 30px;
 }
 
 h1 {
@@ -148,37 +137,4 @@ form {
     flex-direction: column;
     width: 100%;
     gap: 0.5em;
-}
-
-.input-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 50px;
-    font-family: Arial, sans-serif;
-}
-
-input[type="file"] {
-    display: none;
-}
-
-.custom-file-upload {
-    background-color: #6a1b9a;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-weight: bold;
-}
-
-.custom-file-upload:hover {
-    background-color: #7e57c2;
-}
-
-.file-name {
-    font-size: 14px;
-    color: #afafaf;
-    font-style: italic;
 }

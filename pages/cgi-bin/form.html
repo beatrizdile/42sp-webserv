@@ -3,24 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <title>Formulário CGI</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" href="/resources/favicon.png">
   </head>
   <body>
-    <h1>Formulário CGI</h1>
+    <div class="content">
+      <h1>Formulário CGI</h1>
+      
+      <!-- Formulário para enviar via POST -->
+      <form class="form-wrapper" action="/cgi-bin/process_form.sh" method="post">
+        <div class="label-wrapper">
+          <strong>Nome: </strong><input class="input-wrapper" type="text" name="nome" />
+          <strong>Email: </strong><input class="input-wrapper" type="text" name="email" />
+        </div>
+        <input class="button-style" type="submit" value="Enviar POST" />
+      </form>
 
-    <!-- Formulário para enviar via POST -->
-    <form action="/cgi-bin/process_form.sh" method="post">
-      Nome: <input type="text" name="nome" /><br />
-      Email: <input type="text" name="email" /><br />
-      <input type="submit" value="Enviar POST" />
-    </form>
+      <br />
 
-    <br />
-
-    <!-- Formulário para enviar via GET -->
-    <form action="/cgi-bin/process_form.sh" method="get">
-      Nome: <input type="text" name="nome" /><br />
-      Email: <input type="text" name="email" /><br />
-      <input type="submit" value="Enviar GET" />
-    </form>
+      <!-- Formulário para enviar via GET -->
+      <form class="form-wrapper" action="/cgi-bin/process_form.sh" method="get">
+        <div class="label-wrapper">
+          <strong>Nome: </strong><input class="input-wrapper" type="text" name="nome" />
+          <strong>Email: </strong><input class="input-wrapper" type="text" name="email" />
+        </div>
+        <input class='button-style' type="submit" value="Enviar GET" />
+      </form>
+    </div>
   </body>
 </html>

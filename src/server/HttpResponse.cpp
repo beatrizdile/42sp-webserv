@@ -1,5 +1,7 @@
 #include "HttpResponse.hpp"
 
+#include "utils.h"
+
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -8,6 +10,7 @@
 #include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
@@ -328,7 +331,7 @@ std::string HttpResponse::createErrorResponse(size_t status, const std::string &
     httpStatus = status;
     for (std::vector<std::pair<size_t, std::string> >::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
         if (it->first == status) {
-            std::string filePath = root + it->second;
+            std::string filePath = createPath(root, it->second);
             std::ifstream file(filePath.c_str());
             if (file.is_open()) {
                 std::stringstream buffer;

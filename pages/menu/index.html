@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" href="/resources/favicon.png">
   </head>
   <body>
     <div class="title-wrapper">
@@ -12,30 +13,14 @@
     </div>
     <div class="button-wrapper">
       <a class="button-style" href="resources/purple-sky.jpg">Get</a>
-      <br />
-      <a class="button-style" href="">Post</a>
-      <br />
-      <a class="button-style" id="delete-btn">Delete</a>
+      <a class="button-style" href="/post.html">Post</a>
+      <a class="button-style" href="/delete.html">Delete</a>
+      <a class="button-style" href="/cgi-bin/form.html">CGI</a>
+      <a class="button-style" href="/cgi-bin/loop.py">CGI Loop</a>
+      <a class="button-style" href="/cookies.html">Cookies</a>
+      <a class="button-style" href="/resources/">Auto Index</a>
+      <a class="button-style" href="/nao-existe">404 Page</a>
+      <a class="button-style" href="/cgi-bin/dasdas">404 Default</a>
     </div>
-
-    <script>
-      document
-        .getElementById("delete-btn")
-        .addEventListener("click", function () {
-          fetch("resources/delete-file-1.txt", {
-            method: "DELETE",
-          })
-            .then((response) => {
-              if (response.ok) {
-                alert("Recurso deletado com sucesso!");
-              } else {
-                alert("Falha ao deletar o recurso.");
-              }
-            })
-            .catch((error) => {
-              console.error("Erro:", error);
-            });
-        });
-    </script>
   </body>
 </html>
