@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Demo</title>
+  </head>
+  <body>
+    <h1>Cookie Test</h1>
+
+    <a href="/cgi-bin/just_with_login.sh">Pagina acessível apenas com login</a>
+    <button id="setCookieBtn">Login</button>
+    <p id="cookieValue">O valor do cookie será mostrado aqui.</p>
+
+    <script>
+      function getCookie(name) {
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const cookies = decodedCookie.split(";");
+        name = name + "=";
+        for (let i = 0; i < cookies.length; i++) {
+          let c = cookies[i].trim();
+          if (c.indexOf(name) === 0) {
+            return c.substring(name.length, c.length);
+          }
+        }
+        return "";
+      }
+
+      function displayCookie() {
+        const cookieValue = getCookie("user_name");
+        if (cookieValue) {
+          document.getElementById("cookieValue").textContent =
+            "Nome de usuário: " + cookieValue;
+        }
+      }
+
+      document.getElementById("setCookieBtn").addEventListener("click", () => {
+        fetch("/cgi-bin/login.sh", {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              displayCookie();
+              alert("Cookie configurado com sucesso!");
+            }
+          })
+          .catch((error) => console.error("Erro:", error));
+      });
+
+      window.onload = function () {
+        displayCookie();
+      };
+    </script>
+  </body>
+</html>

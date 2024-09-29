@@ -14,7 +14,7 @@ const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
 const std::string HttpResponse::HTTP_VERSION = "HTTP/1.1";
 const std::string HttpResponse::DEFAULT_MIME_TYPE = "text/plain";
 
-HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag(""), hasZeroContentLength(false), extraHeaders() {}
+HttpResponse::HttpResponse() : httpStatus(0), contentType(""), body(""), lastModified(""), fileName(""), etag(""), hasZeroContentLength(false), extraHeaders(), cookies() {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -33,6 +33,7 @@ HttpResponse &HttpResponse::operator=(const HttpResponse &assign) {
         location = assign.location;
         hasZeroContentLength = assign.hasZeroContentLength;
         extraHeaders = assign.extraHeaders;
+        cookies = assign.cookies;
     }
 
     return *this;
@@ -73,6 +74,12 @@ std::string HttpResponse::createResponse() {
     if (!etag.empty())
         serverResponse << "ETag: " << etag << "\r\n";
 
+    if (!cookies.empty()) {
+        for (std::vector<std::string>::const_iterator cookie = cookies.begin(); cookie != cookies.end(); ++cookie) {
+            serverResponse << "Set-Cookie: " << *cookie << "\r\n";
+        }
+    }
+
     serverResponse << "\r\n";
 
     if (!body.empty()) {
@@ -100,7 +107,16 @@ void HttpResponse::clear() {
     etag.clear();
     location.clear();
     extraHeaders.clear();
+    cookies.clear();
     hasZeroContentLength = false;
+}
+
+void HttpResponse::setCookie(const std::string &key, const std::string &value, const std::string &expires, const std::string &path = "/", bool httpOnly = false) {
+    std::string cookie = key + "=" + value + "; Expires=" + expires + "; Path=" + path;
+    if (httpOnly) {
+        cookie += "; HttpOnly";
+    }
+    cookies.push_back(cookie);
 }
 
 std::string HttpResponse::createDate() {
@@ -297,12 +313,12 @@ std::string HttpResponse::createResponseFromStatus(size_t status) {
     return (responseString);
 }
 
-std::string HttpResponse::createCgiResponse(size_t status, const std::string &body, const std::map<std::string, std::string> &headers) {
+std::string HttpResponse::createCgiResponse(size_t status, const std::string &body, const std::map<std::string, std::string> &headers, const std::vector<std::string> &cookies) {
     httpStatus = status;
     this->body = body;
     hasZeroContentLength = body.empty();
     extraHeaders = headers;
-
+    this->cookies = cookies;
     std::string responseString = createResponse();
     clear();
     return (responseString);

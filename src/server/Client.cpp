@@ -131,6 +131,13 @@ std::string Client::createCgiProcess(const Configurations& config, std::string& 
         setenv("REQUEST_URI", request.getUri().c_str(), 1);
         setenv("SERVER_PROTOCOL", request.getVersion().c_str(), 1);
         setenv("SERVER_SOFTWARE", "webserv", 1);
+        std::string cookies;
+        for (std::map<std::string, std::string>::const_iterator it = request.getCookies().begin(); it != request.getCookies().end(); ++it) {
+            cookies += it->first + "=" + it->second + "; ";
+        }
+        if (!cookies.empty()) {
+            setenv("HTTP_COOKIE", cookies.c_str(), 1);
+        }
         setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
         setenv("QUERY_STRING", request.getQueryParameters().c_str(), 1);
         setenv("CONTENT_LENGTH", numberToString(request.getBody().size()).c_str(), 1);
@@ -235,6 +242,7 @@ void Client::readCgiResponse() {
     std::map<std::string, std::string> responseHeaders;
     std::istringstream responseStream(cgiOutputStr);
     std::string line;
+    std::vector<std::string> cookies;
     while (std::getline(responseStream, line) && line != "\r" && line != "") {
         size_t pos = line.find(": ");
         if (pos == std::string::npos) {
@@ -252,7 +260,13 @@ void Client::readCgiResponse() {
             responseStr = response.createErrorResponse(500, cgiConfig.getRoot(), cgiConfig.getErrorPages());
             return;
         }
-        responseHeaders[key] = value;
+        std::string headerKey = key;
+        lowercase(headerKey);
+        if (headerKey == "set-cookie") {
+            cookies.push_back(value);
+        } else {
+            responseHeaders[key] = value;
+        }
     }
 
     bool findContentType = false;
@@ -275,7 +289,7 @@ void Client::readCgiResponse() {
     }
 
     cgiOutputStr.clear();
-    responseStr = response.createCgiResponse(200, body, responseHeaders);
+    responseStr = response.createCgiResponse(200, body, responseHeaders, cookies);
 }
 
 void Client::verifyCgiTimeout(std::vector<int>& fdsToRemove) {
@@ -352,7 +366,13 @@ std::vector<Server>::const_iterator Client::findServer(const std::vector<Server>
 }
 
 void Client::matchUriAndResponseClient(const std::vector<Server>& servers, std::vector<pollfd>& fdsToAdd) {
-    logger.info() << "Request: " << getMethodString(request.getMethod()) << ' ' << request.getUri() << ' ' << request.getVersion() << std::endl;
+    std::string cookies = "Cookies:";
+    if (request.getCookies().size() > 0) {
+        for (std::map<std::string, std::string>::const_iterator it = request.getCookies().begin(); it != request.getCookies().end(); ++it) {
+            cookies += ' ' + it->first + "=" + it->second + ";";
+        }
+    }
+    logger.info() << "Request: " << getMethodString(request.getMethod()) << ' ' << request.getUri() << ' ' << request.getVersion() << ' ' << cookies << std::endl;
     std::vector<Server>::const_iterator server = findServer(servers, request.getHeaders().at(HttpRequest::HEADER_HOST_KEY));
     std::vector<Location>::const_iterator location = (*server).matchUri(request.getUri());
     if (location == (*server).getLocations().end()) {
@@ -484,7 +504,7 @@ std::string Client::processDeleteRequest(const Configurations& config, const std
         std::string command = "rm -rf " + path;
         int result = std::system(command.c_str());
         if (result == 0)
-            return (response.createResponseFromStatus((204)));
+            return (response.createResponseFromStatus(204));
         return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
     } else if (remove(path.c_str()) == -1) {
         return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));

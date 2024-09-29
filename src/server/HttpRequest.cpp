@@ -9,6 +9,7 @@
 #include "utils.h"
 
 const std::string HttpRequest::HEADER_HOST_KEY = "host";
+const std::string HttpRequest::HEADER_COOKIES_KEY = "cookie";
 const std::string HttpRequest::URI_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVXWYZabcdefghijklmnopqrstuvxwyz0123456789-_.~/?:@&=+$,#";
 const std::string HttpRequest::HEADER_VALUE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-!@#$%^&*()_+|~=`{}[];:'\",.<>/? \t\r\n";
 const std::string HttpRequest::HEADER_KEY_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-";
@@ -17,7 +18,7 @@ const std::string HttpRequest::CONTENT_LENTH_HEADER_KEY = "content-length";
 const std::string HttpRequest::HEADER_ETAG_KEY = "if-none-match";
 const std::string HttpRequest::HEADER_CONTENT_TYPE_KEY = "content-type";
 
-HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), queryParameters(""), version(""), headers(), body(""), contentLength(0), complete(false) {}
+HttpRequest::HttpRequest() : logger("HTTP_REQUEST"), rawData(""), method(INVALID), uri(""), queryParameters(""), version(""), headers(), cookies(), body(""), contentLength(0), complete(false) {}
 
 HttpRequest::HttpRequest(const HttpRequest &copy) {
     *this = copy;
@@ -34,6 +35,7 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &assign) {
         queryParameters = assign.queryParameters;
         version = assign.version;
         headers = assign.headers;
+        cookies = assign.cookies;
         body = assign.body;
         contentLength = assign.contentLength;
         complete = assign.complete;
@@ -47,6 +49,7 @@ void HttpRequest::clear() {
     queryParameters.clear();
     version.clear();
     headers.clear();
+    cookies.clear();
     body.clear();
     contentLength = 0;
     complete = false;
@@ -66,6 +69,11 @@ bool HttpRequest::digestRequest(const std::string &data) {
 
             if (headers.find(HEADER_HOST_KEY) == headers.end()) {
                 throw std::runtime_error("Host header not found");
+            }
+
+            std::map<std::string, std::string>::iterator it = headers.find(HEADER_COOKIES_KEY);
+            if (it != headers.end()) {
+                parseCookies(it->second);
             }
 
             if (contentLength == 0) {
@@ -135,6 +143,24 @@ void HttpRequest::parseFristLine() {
     if (version != HTTP_VERSION) {
         throw std::runtime_error("Invalid HTTP version '" + version + '\'');
     }
+}
+
+void HttpRequest::parseCookies(const std::string &cookieHeader) {
+    std::stringstream ss(cookieHeader);
+    std::string token;
+
+    while (std::getline(ss, token, ';')) {
+        size_t pos = token.find('=');
+        if (pos != std::string::npos) {
+            std::string key = token.substr(0, pos);
+            std::string value = token.substr(pos + 1);
+            cookies[key] = value;
+        }
+    }
+}
+
+const std::map<std::string, std::string> &HttpRequest::getCookies() const {
+    return (cookies);
 }
 
 void HttpRequest::parseHeaders(size_t endPos) {

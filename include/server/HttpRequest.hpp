@@ -9,6 +9,7 @@
 class HttpRequest {
    public:
     static const std::string HEADER_HOST_KEY;
+    static const std::string HEADER_COOKIES_KEY;
     static const std::string URI_CHARACTERS;
     static const std::string HEADER_CONTENT_TYPE_KEY;
 
@@ -25,6 +26,7 @@ class HttpRequest {
     const std::string &getQueryParameters() const;
     const std::string &getVersion() const;
     const std::map<std::string, std::string> &getHeaders() const;
+    const std::map<std::string, std::string> &getCookies() const;
     const std::string &getBody() const;
     bool isComplete() const;
     std::string getEtag() const;
@@ -40,6 +42,7 @@ class HttpRequest {
     std::string queryParameters;
     std::string version;
     std::map<std::string, std::string> headers;
+    std::map<std::string, std::string> cookies;
     std::string body;
     size_t contentLength;
     bool complete;
@@ -53,4 +56,5 @@ class HttpRequest {
 
     void parseFristLine();
     void parseHeaders(size_t endPos);
+    void parseCookies(const std::string &cookieHeader);
 };

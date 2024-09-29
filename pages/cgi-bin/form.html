@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Formulário CGI</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Formulário CGI</h1>
 
     <!-- Formulário para enviar via POST -->
     <form action="/cgi-bin/process_form.sh" method="post">
-        Nome: <input type="text" name="nome"><br>
-        Email: <input type="text" name="email"><br>
-        <input type="submit" value="Enviar POST">
+      Nome: <input type="text" name="nome" /><br />
+      Email: <input type="text" name="email" /><br />
+      <input type="submit" value="Enviar POST" />
     </form>
 
-    <br>
+    <br />
 
     <!-- Formulário para enviar via GET -->
     <form action="/cgi-bin/process_form.sh" method="get">
-        Nome: <input type="text" name="nome"><br>
-        Email: <input type="text" name="email"><br>
-        <input type="submit" value="Enviar GET">
+      Nome: <input type="text" name="nome" /><br />
+      Email: <input type="text" name="email" /><br />
+      <input type="submit" value="Enviar GET" />
     </form>
-
-</body>
+  </body>
 </html>
