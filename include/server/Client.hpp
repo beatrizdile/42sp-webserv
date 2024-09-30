@@ -14,7 +14,7 @@ class Client {
    public:
     static const size_t READ_BUFFER_SIZE;
     static const size_t WRITE_BUFFER_SIZE;
-    static const long long CGI_TIMEOUT_IN_SECONDS;
+    static const long long CGI_TIMEOUT_IN_MILLIS;
 
     Client();
     ~Client();

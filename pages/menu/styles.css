@@ -28,7 +28,7 @@ a {
     text-decoration: none;
     color: inherit;
 }
-  
+
 a:hover, a:active, a:visited {
     text-decoration: none;
     color: inherit;
@@ -51,13 +51,20 @@ a.title:hover {
     transform: translate(-2px, -2px)
 }
 
+div.wrapper {
+    display: flex;
+    flex-direction: row;
+    margin: 0 auto;
+    align-items: center;
+    gap: 1em;
+}
 
 .button-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    height: 600px;
+    height: 300px;
     justify-content: space-between;
     line-height: 7;
 }
@@ -90,13 +97,12 @@ a.title:hover {
     line-height: 36px;
 }
 
-   
 .button-style:hover {
     background: rgba(115, 22, 159, 0.8);
     /* background: rgb(2,0,36);
     background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgb(134, 58, 157) 100%); */
 }
-   
+
 .button-style:active {
     transform: translate(0em, 0.2em);
 }

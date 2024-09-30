@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Post</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="icon" type="image/png" href="/resources/favicon.png">
+    <link rel="icon" type="image/png" href="/resources/favicon.png" />
   </head>
   <body>
     <div class="content">
@@ -16,40 +16,40 @@
             Escolher Arquivo
           </label>
           <input type="file" id="fileInput" required />
-          <span id="fileName" class="file-name">Nenhum arquivo selecionado</span>
+          <span id="fileName" class="file-name"
+            >Nenhum arquivo selecionado</span
+          >
         </div>
         <button class="button-style" onclick="uploadFile()">Enviar</button>
       </div>
     </div>
 
     <script>
-      const fileInput = document.getElementById('fileInput');
-      const fileNameSpan = document.getElementById('fileName');
-  
-      fileInput.addEventListener('change', function() {
+      const fileInput = document.getElementById("fileInput");
+      const fileNameSpan = document.getElementById("fileName");
+
+      fileInput.addEventListener("change", function () {
         if (this.files.length > 0) {
           fileNameSpan.textContent = this.files[0].name;
         } else {
-          fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+          fileNameSpan.textContent = "Nenhum arquivo selecionado";
         }
       });
     </script>
-  
 
     <script>
       function formatFileNameAsSlug(fileName) {
-        const parts = fileName.split('.');
+        const parts = fileName.split(".");
         const extension = parts.pop();
-        const baseName = parts.join('.');
+        const baseName = parts.join(".");
 
-       
         const slugifiedBase = baseName
           .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '');
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "");
 
         return `${slugifiedBase}.${extension.toLowerCase()}`;
       }

@@ -6,6 +6,7 @@
 #include <algorithm>
 
 const size_t WebServer::MAX_EVENTS = 1000;
+const size_t WebServer::POLL_TIMEOUT = 1000;
 
 WebServer::WebServer() : logger(Logger("SERVER_MANAGER")), fds(std::vector<struct pollfd>()), servers(std::vector<ServerManager>()) {
     fds.reserve(MAX_EVENTS);
@@ -75,7 +76,7 @@ void WebServer::runServers() {
         try {
             int affected = 0;
             int currentAffected = 0;
-            if ((affected = poll(fds.data(), fds.size(), -1)) < 0) {
+            if ((affected = poll(fds.data(), fds.size(), POLL_TIMEOUT)) < 0) {
                 throw createError("poll");
             }
 

@@ -244,6 +244,24 @@ re:			fclean all
 val:
 			@valgrind --track-origins=yes --track-fds=yes --leak-check=full -q ./$(NAME) ./configs/default.conf
 
+curl_test:
+			@echo Test hostname -----------------------
+			curl --resolve example.com:8080:127.0.0.1 http://example.com:8080/
+			@echo
+			@echo
+			@echo Test limit body with large ----------
+			curl -X POST -H "Content-Type: text/plain" --data "BODY IS HERE write something shorter or longer than body limit" --resolve example.com:8080:127.0.0.1 http://example.com:8080/
+			@echo
+			@echo Test limit body with small ----------
+			curl -X POST -H "Content-Type: text/plain" --data "BODY" --resolve example.com:8080:127.0.0.1 http://example.com:8080/test.txt
+			@echo
+			@echo Test try delete without permission --
+			curl -X DELETE --resolve example.com:8080:127.0.0.1 http://example.com:8080/test.txt
+
+siege_test:
+			@echo Test siege --------------------------
+			siege -b http://localhost:8080/empty.txt
+
 reval: fclean all val
 
-.PHONY:		all clean fclean re header val reval
+.PHONY:		all clean fclean re header val reval curl_test siege_test

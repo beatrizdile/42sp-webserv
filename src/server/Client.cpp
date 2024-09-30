@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -13,7 +14,7 @@
 
 const size_t Client::READ_BUFFER_SIZE = 1024 * 2;          // 2 KB
 const size_t Client::WRITE_BUFFER_SIZE = 1024 * 1024 * 1;  // 1 MB
-const long long Client::CGI_TIMEOUT_IN_SECONDS = 2;        // 2 seconds
+const long long Client::CGI_TIMEOUT_IN_MILLIS = 2000;      // 2 seconds
 
 Client::Client() : fd(0), pipeIn(0), pipeOut(0), request(), response(), responseStr(""), cgiOutputStr(""), cgiInputStr(""), cgiPid(0), cgiStarProcessTimestamp(0), cgiConfig(), logger("CLIENT") {}
 
@@ -54,9 +55,10 @@ bool Client::isFdValid(int fd) const {
     return (fd == this->fd || fd == pipeIn || fd == pipeOut);
 }
 
-static long long getTimestampSeconds() {
-    std::time_t now = std::time(0);
-    return (static_cast<long long>(now));
+static long long getCurrentTimeMillis() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return (time.tv_sec * 1000LL) + (time.tv_usec / 1000);
 }
 
 static int setNonBlockingFlag(int fd) {
@@ -99,7 +101,7 @@ std::string Client::createCgiProcess(const Configurations& config, std::string& 
         return (response.createErrorResponse(500, config.getRoot(), config.getErrorPages()));
     }
 
-    cgiStarProcessTimestamp = getTimestampSeconds();
+    cgiStarProcessTimestamp = getCurrentTimeMillis();
     int pid = fork();
     if (pid == -1) {
         close(pipeOutput[0]);
@@ -297,8 +299,8 @@ void Client::verifyCgiTimeout(std::vector<int>& fdsToRemove) {
         return;
     }
 
-    long long currentTimestamp = getTimestampSeconds();
-    if (currentTimestamp - cgiStarProcessTimestamp > CGI_TIMEOUT_IN_SECONDS) {
+    long long currentTimestamp = getCurrentTimeMillis();
+    if (currentTimestamp - cgiStarProcessTimestamp > CGI_TIMEOUT_IN_MILLIS) {
         kill(cgiPid, SIGKILL);
         cgiPid = 0;
         cgiOutputStr.clear();

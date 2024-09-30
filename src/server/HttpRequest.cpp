@@ -90,6 +90,8 @@ bool HttpRequest::digestRequest(const std::string &data) {
         return (true);
     } catch (std::exception &e) {
         logger.error() << "Error: " << e.what() << std::endl;
+        rawData.clear();
+        clear();
         return (false);
     }
 }

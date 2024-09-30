@@ -28,7 +28,7 @@ a {
     text-decoration: none;
     color: inherit;
 }
-  
+
 a:hover, a:active, a:visited {
     text-decoration: none;
     color: inherit;
@@ -87,13 +87,13 @@ input.button-style {
     border-radius: 4px;
     box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
 }
-   
+
 input.button-style:hover {
     background: rgba(115, 22, 159, 0.8);
     /* background: rgb(2,0,36);
     background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgb(134, 58, 157) 100%); */
 }
-   
+
 input.button-style:active {
     transform: translate(0em, 0.2em);
 }

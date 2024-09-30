@@ -9,6 +9,7 @@
 class WebServer {
    public:
     static const size_t MAX_EVENTS;
+    static const size_t POLL_TIMEOUT;
 
     WebServer();
     WebServer(const Config &config);

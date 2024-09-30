@@ -1,7 +1,5 @@
 #include "HttpResponse.hpp"
 
-#include "utils.h"
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -12,6 +10,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+#include "utils.h"
 
 const std::string HttpResponse::SERVER_NAME = "Webserver/1.0";
 const std::string HttpResponse::HTTP_VERSION = "HTTP/1.1";
